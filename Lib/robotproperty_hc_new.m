@@ -1,4 +1,4 @@
-function robot=robotproperty_hc(id)
+function robot=robotproperty_hc_new(id)
 
 switch id
     case 1
@@ -89,10 +89,15 @@ switch id
         
         %The length of each links and DH parameter and base
         robot.l=[0.0825;0.04; 0.12228; 0.1245; 0.08 ];
+        robot.lc=[0.0425;0.02; 0.06228; 0.0645; 0.05 ];
         theta = [0; -0.5*pi; 0 ; 0 ;0 ];
         T = [0   0 -0.15    0   0.03 0.13;
              0   0   0      0  -0.12   0 ;
-             0   0   0.0  0     0    0];
+             0   0   0.0  0.04     0    0];
+         
+        robot.Tc = [   -0.10   0     0.015 0.7  0.05;
+                        0      0    -0.07   0    0 ;
+                        0.0   0.04     0    0    0];
         robot.DH=[0, 0, 0, 0;
                   0, 0.034, 0.0825, 0 ;
                   0, 0.04,  0 , 3*pi/2;                    
@@ -103,6 +108,18 @@ switch id
 %                   0, 0.04,  0 , 3*pi/2;                    
 %                   0, 0.12, 0.0235, 0;
 %                   0, 0, 0.1245, 0];%theta,d,a,alpha
+        robot.m = [0.8; 0.1 ; 0.13 ; 0.12 ; 0.4];
+        
+        Ixyz = [2.2675     0     0     0    0
+               0         0     0     0    0
+               0         0     0     0    0]*10^-05; %%%%%%
+        
+        robot.Ic = cell(1,nlink);
+        for i = 1:nlink
+            robot.Ic{i} = diag(Ixyz(:,i));
+        end
+               
+        
                
         robot.base=[0;0;0];%origin
         
@@ -122,7 +139,7 @@ switch id
         robot.cap{5}.p=[0 0.12;0 0;0 0];
         robot.cap{5}.r=0.025;        
         
-        load('figure/RobotCapsules.mat');
+        
         robot.boundary=RoBoundary;
 end
 
@@ -148,7 +165,7 @@ RoCap = robot.cap;
 nlink=robot.nlink;
 pos=cell(1,nlink);
 M=cell(1,nlink+1); M{1}=eye(4);
-
+R_=cell(1,nlink); R_{1}=eye(3);
 for i=2:nlink+1
         % R in book
         R=[cos(theta(i-1)) -sin(theta(i-1))  0;
@@ -164,14 +181,17 @@ for i=2:nlink+1
                    
             R = Rx*R;
         end
+        R_{i-1} = R;
         M{i}=M{i-1}*[R T(:,i); zeros(1,3) 1]; 
         for k=1:2
          pos{i-1}.p(:,k)=M{i}(1:3,1:3)*RoCap{i-1}.p(:,k)+M{i}(1:3,4)+base;
         end
 end
 
-
+robot.R_ = R_;
+robot.M = M;
 robot.pos = pos;
+robot.T = T;
 
 %robot.pos=CapPos(robot.base,robot.DH,robot.cap);
 robot.wx(1:3,1)=robot.pos{robot.nlink}.p(:,2);

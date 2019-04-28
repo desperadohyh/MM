@@ -24,12 +24,10 @@ dim         = 2; %x,y
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 generate_reference
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% TB: feasibility 
-FEAS = 1;
 
 % Arm definition
 % Arm parameters
-robot=robotproperty_hc(4);
+robot=robotproperty_hc_new(4);
 % Arm joint
 njoint      =5; % joint number
 nstate      =10; % QP variable dim
@@ -41,13 +39,13 @@ DH          =robot.DH;
 obs_arm     =[[1.05;-0.2;0.35] [1.05;-0.2;0.5]];
 obs_arm_r   = 0.35; % radius
 
-ss=35;
+ss=5;
 X_out(1) = 0;
 cc = 1;
 xV = 0.2
 
 bb=1;
-
+%%
 for steps=1:ss
 
 [xref_t,xori,xref,xR,path,refpath,uref]=generate_reference_loop(var,Ax_current,Tx_current,zAT,horizon,nstate,uref,u0 );
@@ -173,7 +171,7 @@ beq = [path(:,1)];
 
 
  for k = 1:25
-    FEAS = 1;
+    
     %% The constraint
     Lstack = []; Sstack = []; margin = 0.2;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
