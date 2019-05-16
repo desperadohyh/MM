@@ -80,7 +80,8 @@ switch id
         
      case 4
         %the constants
-        robot.nlink=5;
+        nlink = 5;
+        robot.nlink = nlink;
         robot.umax=10;
         robot.thetamax=[-pi,pi;-pi,pi; -pi/2,pi/2; -pi/2,(pi/2)*0.75; -pi*0.75,pi*0.75];
         robot.thetadotmax=[1;1;1;1;1];
@@ -91,6 +92,7 @@ switch id
         robot.l=[0.0825;0.04; 0.12228; 0.1245; 0.08 ];
         robot.lc=[0.0425;0.02; 0.06228; 0.0645; 0.05 ];
         theta = [0; -0.5*pi; 0 ; 0 ;0 ];
+        robot.theta = theta;
         T = [0   0 -0.15    0   0.03 0.13;
              0   0   0      0  -0.12   0 ;
              0   0   0.0  0.04     0    0];
@@ -140,7 +142,6 @@ switch id
         robot.cap{5}.r=0.025;        
         
         
-        robot.boundary=RoBoundary;
 end
 
 %The kinematic matrices
