@@ -22,12 +22,12 @@ obs{1}.poly = [1.1+xd 1.3+xd+0.5 1.4+xd+0.5 0.9+xd;0.1+yd 0.1+yd -0.5+yd -0.5+yd
 % TB: trajectory dimension
 dim         = 2; %x,y
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-generate_reference
+gen_ref_MMD
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Arm definition
 % Arm parameters
-robot=robotproperty_hc_new(4, z0_, Ts);
+robot=robotproperty_MMD(4, z0_, Ts);
 % Arm joint
 njoint      =5; % joint number
 nstate      =10; % QP variable dim
@@ -49,7 +49,7 @@ robot.Z0 = sym('z',[19 1]);
 robot.z0_ = zeros(19,1);
 robot.nTherta = 6;
 
-
+%%
 joint_torque1(robot,obs_arm);
 
 

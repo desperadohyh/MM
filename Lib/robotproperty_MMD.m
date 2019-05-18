@@ -151,7 +151,7 @@ end
 %% The kinematic model
 
 U0 = zeros(6,1);
-[Z1, A, B ] = LinKin(z0_, U0, Ts)
+[Z1, A, B ] = LinKin(z0_, U0, Ts);
 % robot.A=[eye(robot.nlink) robot.delta_t*eye(robot.nlink);
 %         zeros(robot.nlink) eye(robot.nlink)];
 % robot.B=[0.5*robot.delta_t^2*eye(robot.nlink);
