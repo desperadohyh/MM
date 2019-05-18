@@ -1,4 +1,4 @@
-function robot=robotproperty_hc_new(id)
+function robot=robotproperty_hc_new(id, z0_, Ts)
 
 switch id
     case 1
@@ -79,6 +79,8 @@ switch id
         robot.boundary=RoBoundary;
         
      case 4
+         
+        
         %the constants
         nlink = 5;
         robot.nlink = nlink;
@@ -87,6 +89,7 @@ switch id
         robot.thetadotmax=[1;1;1;1;1];
         robot.margin=0.05;
         robot.delta_t=0.5;
+        robot.tua_max = 3;
         
         %The length of each links and DH parameter and base
         robot.l=[0.0825;0.04; 0.12228; 0.1245; 0.08 ];
@@ -139,12 +142,16 @@ switch id
         robot.cap{4}.r=0.025;
         
         robot.cap{5}.p=[0 0.12;0 0;0 0];
-        robot.cap{5}.r=0.025;        
+        robot.cap{5}.r=0.025; 
+        
+        
         
         
 end
+%% The kinematic model
 
-%The kinematic matrices
+U0 = zeros(6,1);
+[Z1, A, B ] = LinKin(z0_, U0, Ts)
 robot.A=[eye(robot.nlink) robot.delta_t*eye(robot.nlink);
         zeros(robot.nlink) eye(robot.nlink)];
 robot.B=[0.5*robot.delta_t^2*eye(robot.nlink);

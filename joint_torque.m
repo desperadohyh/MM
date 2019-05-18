@@ -27,7 +27,7 @@ generate_reference
 
 % Arm definition
 % Arm parameters
-robot=robotproperty_hc_new(4);
+robot=robotproperty_hc_new(4, z0_, Ts);
 % Arm joint
 njoint      =5; % joint number
 nstate      =10; % QP variable dim
@@ -45,7 +45,8 @@ cc = 1;
 xV = 0.2
 
 bb=1;
-robot.Z0 = sym('z',[1 19]);
+robot.Z0 = sym('z',[19 1]);
+robot.z0_ = zeros(19,1);
 robot.nTherta = 6;
 
 
@@ -54,8 +55,9 @@ joint_torque1(robot,obs_arm);
 
 
 
-function [d, linkid] = joint_torque1(robot,obs_arm)
+function [d, linkid, A_tau, b_tau, robot] = joint_torque1(robot,obs_arm)
 
+g = 9.81;
 cap = robot.cap;
 DH = robot.DH;
 base = robot.base;
@@ -83,7 +85,7 @@ T = [0   0 -0.15    0   0.03 0.13;
 %Vc = zeros(3,nlink);
 %Keng = zeros(nlink,1);
 
-
+%% Kinetic Energy
 Wo_l(:,1) = [0;0;Z0(7)];
 
 for i = 1:nlink
@@ -102,13 +104,26 @@ for i = 1:nlink-1
     Keng(i+1) = 0.5*m(i+1)*Vc(:,i+1)'*Vc(:,i+1) + 0.5*Wo_l(:,i+1)'*Ic{i+1}*Wo_l(:,i+1);
 end
 
+KENG = sum(Keng);
+
+%% Potential Energy
+
+ueng(1) = sym(m(1)*g*0.1);
+ueng(2) = m(2)*g*(0.1 + lc(2));
+ueng(3) = m(3)*g*(M{3}(3,4) + lc(3)*sin(pi/2 - Z0(14)));
+ueng(4) = m(4)*g*(M{3}(3,4) + l(3)*sin(pi/2 - Z0(14)) - lc(4)*sin(Z0(14) + Z0(16)));
+ueng(5) = m(5)*g*(M{3}(3,4) + l(3)*sin(pi/2 - Z0(14)) - l(4)*sin(Z0(14) + Z0(16)) - lc(5)*sin(Z0(14) + Z0(16) + Z0(18)));
+
+UENG = sum(ueng);
 %% Inner-torque
-A_tau = zeros(robot.nTherta,robot.nTherta);
-for i = 1:nlink-1
-    A_tau(i,:) = gradient(Keng(i+1),[Z0(9) Z0(11) Z0(7) Z0(13) Z0(15) Z0(17) Z0(19)]);
-end
 
 
+thetadd = hessian(KENG,[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
+A_tau = double(subs(thetadd,Z0,robot.z0_));
+
+thetad = gradient(-KENG,[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
+thetad = thetad + gradient(UENG,[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
+b_tau = double(subs(thetad,Z0,robot.z0_));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 nstate = size(DH,1);
@@ -128,6 +143,7 @@ RoCap = cap;
 nlink=size(theta,1);
 pos=cell(1,nlink);
 M=cell(1,nlink+1); M{1}=eye(4);
+R_=cell(1,nlink); R_{1}=eye(3);
 for i=2:nlink+1
         % R in book
         R=[cos(theta(i-1)) -sin(theta(i-1))  0;
@@ -143,11 +159,15 @@ for i=2:nlink+1
                    
             R = Rx*R;
         end
-        M{i}=M{i-1}*[R T(:,i); zeros(1,3) 1]; 
+        R_{i-1} = R;
+        M{i}=M{i-1}*[R T(:,i); zeros(1,3) 1]; ; 
         for k=1:2
          pos{i-1}.p(:,k)=M{i}(1:3,1:3)*RoCap{i-1}.p(:,k)+M{i}(1:3,4)+base;
         end
 end
+
+robot.R_ = R_;
+robot.M = M;
 
 for i=1:nstate
     
