@@ -48,7 +48,7 @@ xV = 0.2;
 %%
 for steps=1:ss
 
-[xref_t,xori,xref,xR]=gen_loop_MMD(var,z0_,zT,H);
+[xref_t,xori,xref,xR, robot.A, robot.B]=gen_loop_MMD(var,z0_,zT,H);
 
 %% Arm Cost function and Constraints
 % if steps == 11||steps == 12
@@ -57,20 +57,22 @@ for steps=1:ss
 %     obs{1}.poly = [1.1+xd 1.3+xd 1.4+xd 0.9+xd;0.1+yd 0.1+yd -0.5+yd -0.5+yd];
 %     
     % Cost Fn Parameters
-    Aaug=[];Baug=zeros(horizon*nstate,horizon*nu);Qaug=zeros(horizon*nstate);
-    
-    for i=1:horizon
-        Aaug=[Aaug;robot.A([1:njoint,6:5+njoint],[1:njoint,6:5+njoint])^i];
-        Qaug((i-1)*nstate+1:i*nstate,(i-1)*nstate+1:i*nstate)=Q_arm*0.1;
-        if i==horizon
-            Qaug((i-1)*nstate+1:i*nstate,(i-1)*nstate+1:i*nstate)=Q_arm*10000;
-        end
+    Aaug=[kron(ones(H,1),robot.A)];Baug=kron(tril(ones(H)),robot.B);
+    U0 = zeros(6,1);
+    for i=1:H-1
+              
+        Aaug = blkdiag(eye(nstate*i),kron(eye(H-i),robot.A))*Aaug;
+%         Qaug((i-1)*nstate+1:i*nstate,(i-1)*nstate+1:i*nstate)=Q_arm*0.1;
+%         if i==H
+%             Qaug((i-1)*nstate+1:i*nstate,(i-1)*nstate+1:i*nstate)=Q_arm*10000;
+%         end
         for j=1:i
-            Baug((i-1)*nstate+1:i*nstate,(j-1)*nu+1:j*nu)=robot.A([1:njoint,6:5+njoint],[1:njoint,6:5+njoint])^(i-j)*robot.B([1:njoint,6:5+njoint],1:nu);
+            Baug(:,(j-1)*nu+1:j*nu)=blkdiag(eye(nstate*i),kron(eye(H-i),robot.A))*Baug(:,(j-1)*nu+1:j*nu);
         end
+        [Z1, robot.A, robot.B ] = LinKin(xref(nstate*(i-1)+1:nstate*i), U0, var.dt);
     end
-    R=eye(horizon*nu);
-    for i=1:horizon
+    R=eye(H*nu);
+    for i=1:H
         R((i-1)*nu+1:i*nu,(i-1)*nu+1:i*nu)=[5 0 0 0 0;
             0 4 1 0 0;
             0 1 2 0 0;
@@ -256,10 +258,10 @@ for k = 1:10
             poly = obs{j}.poly+obs{j}.v*ones(1,4)*dt*i;
             [L,S,d] = d2poly(refpath((i-1)*dim+1:i*dim)',poly');
             %LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim) zeros(1,nstep)];
-            LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim)  zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,horizon)];
+            LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim)  zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,H)];
             ST = [ST;S-margin];
             % Soft constraint
-            LT= [LT;zeros(1,nstep*2) zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,horizon)];
+            LT= [LT;zeros(1,nstep*2) zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,H)];
             ST = [ST;0];
         end
         
@@ -273,7 +275,7 @@ for k = 1:10
     SSA=[];
     I=[];
     rec_d = [];
-    for i=1:horizon
+    for i=1:H
         % provide base according to current 2D path 
         xy = refpath(i*2+1:(i+1)*2);
         base = [xy' 0.1];
@@ -286,24 +288,24 @@ for k = 1:10
         ff = @(x) dist_arm_3D_Heu_hc(x,DH(1:njoint,:),base,obs_arm,robot.cap);
         Diff = num_jac(ff,theta); Diff = Diff';
         
-        Bj=Baug((i-1)*nstate+1:i*nstate,1:horizon*nu);
+        Bj=Baug((i-1)*nstate+1:i*nstate,1:H*nu);
         s=I(i)-Diff'*Bj(1:njoint,:)*uref;
         l=-Diff'*Bj(1:njoint,:);
         LLA = [LLA;l];
         SSA = [SSA;s];
-        LA=[LA; [zeros(1,nstep*2) l zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i)]];
+        LA=[LA; [zeros(1,nstep*2) l zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,H-i)]];
         SA=[SA;s];
         
          % Soft constraint
-        LA = [LA;[zeros(1,nstep*2) zeros(1,horizon*5) zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i)]];
+        LA = [LA;[zeros(1,nstep*2) zeros(1,H*5) zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,H-i)]];
         SA = [SA;0];
     end
 % TpA
     % Quadratic term
     Q = blkdiag(QT,0.1*QA);
-    Q = blkdiag(Q,1000*diag(ones(1,nobj*nstep)),1000*diag(ones(1,horizon)));
+    Q = blkdiag(Q,1000*diag(ones(1,nobj*nstep)),1000*diag(ones(1,H)));
     % Linear term
-    f = [fT' 0.1*fA'  zeros(nobj*nstep+horizon,1)']';
+    f = [fT' 0.1*fA'  zeros(nobj*nstep+H,1)']';
     % inequality 
     LTpA = [LT;LA];
     STpA = [ST;SA];
@@ -314,14 +316,14 @@ for k = 1:10
     Bw1 = Baug(1:nstate:end,:);
     AAxy = zeros(nstep,nstep*2);
     AAu = eye(nstep);
-    AAw = [zeros(1,nu*horizon);-Bw1];
+    AAw = [zeros(1,nu*H);-Bw1];
     AA = [AT zeros(size(AT,1),5*24 )];
-    AA = [AA zeros(size(AA,1),nobj*nstep+horizon)];
+    AA = [AA zeros(size(AA,1),nobj*nstep+H)];
     BA = [bT;];
     
-    LTpA = [LTpA; [AAxy  [zeros(1,nu*horizon);-Bw1] zeros(size(AAxy,1),nobj*nstep+horizon) ] ];
+    LTpA = [LTpA; [AAxy  [zeros(1,nu*H);-Bw1] zeros(size(AAxy,1),nobj*nstep+H) ] ];
     STpA = [STpA;0; -uref_(2:end)' + Aw1*xR(:,1)+0.1];
-    LTpA = [LTpA; [AAxy  [zeros(1,nu*horizon);Bw1] zeros(size(AAxy,1),nobj*nstep+horizon) ] ];
+    LTpA = [LTpA; [AAxy  [zeros(1,nu*H);Bw1] zeros(size(AAxy,1),nobj*nstep+H) ] ];
     STpA = [STpA;0; uref_(2:end)' - Aw1*xR(:,1)+0.1];
 %% QP
     options =  optimoptions('quadprog','Display','off');
@@ -332,7 +334,7 @@ for k = 1:10
     x_out = soln(1:2:2*25);
     y_out = soln(2:2:2*25);
     %u_out = soln(2*25+1:3*25);
-    alpha_out = soln(2*25+1:end-(nobj*nstep+horizon));
+    alpha_out = soln(2*25+1:end-(nobj*nstep+H));
     states_out = Aaug*xR(:,1)+Baug*alpha_out;
     theta_out = [  Ax_current(1)  states_out(1:10:end)';
                    Ax_current(2)  states_out(2:10:end)';
@@ -344,11 +346,11 @@ for k = 1:10
                     
     % Arm u update
     
-    unew = soln((dim)*nstep+1:end-(nobj*nstep+horizon));
+    unew = soln((dim)*nstep+1:end-(nobj*nstep+H));
     
     oldref=xref;
     xref=[];
-    for i=2:horizon+1
+    for i=2:H+1
         xR(:,i)=robot.A([1:njoint,6:5+njoint],[1:njoint,6:5+njoint])*xR(:,i-1)+robot.B([1:njoint,6:5+njoint],1:nu)*unew((i-2)*nu+1:(i-1)*nu);
         xref=[xref;xR(:,i)];
     end
