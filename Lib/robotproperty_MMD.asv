@@ -144,8 +144,6 @@ switch id
         robot.cap{5}.p=[0 0.12;0 0;0 0];
         robot.cap{5}.r=0.025; 
         
-        robot.base = [z0_(1) z0_(2) 0.1]';
-        
         
         
         

@@ -152,20 +152,20 @@ for steps=1:ss
 for k = 1:10
 %% The constraint
 % TB
-%     LT = []; ST = []; margin = 0.2;
-%     for i=1:nstep
-%         for j=1:nobj
-%             poly = obs{j}.poly+obs{j}.v*ones(1,4)*dt*i;
-%             [L,S,d] = d2poly(refpath((i-1)*dim+1:i*dim)',poly');
-%             %LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim) zeros(1,nstep)];
-%             LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim)  zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,H)];
-%             ST = [ST;S-margin];
-%             % Soft constraint
-%             LT= [LT;zeros(1,nstep*2) zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,H)];
-%             ST = [ST;0];
-%         end
-%         
-%     end
+    LT = []; ST = []; margin = 0.2;
+    for i=1:nstep
+        for j=1:nobj
+            poly = obs{j}.poly+obs{j}.v*ones(1,4)*dt*i;
+            [L,S,d] = d2poly(refpath((i-1)*dim+1:i*dim)',poly');
+            %LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim) zeros(1,nstep)];
+            LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim)  zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,H)];
+            ST = [ST;S-margin];
+            % Soft constraint
+            LT= [LT;zeros(1,nstep*2) zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,H)];
+            ST = [ST;0];
+        end
+        
+    end
 
 % Arm
 
@@ -180,7 +180,7 @@ for k = 1:10
         xy = xref(i*nstate+1:i*nstate+2);
         base = [xy' 0.1];
         % get reference theta
-        theta=[xref_pre(6,i+1) xref_pre(12:2:18,i+1)']';
+        theta=[xref_pre(6,i+1) xref_pre(12:2:,i+1)]';
         [distance,linkid]=dist_arm_3D_Heu_hc(theta,DH(1:njoint,:),base,obs_arm,robot.cap);
         rec_d = [rec_d distance];
         

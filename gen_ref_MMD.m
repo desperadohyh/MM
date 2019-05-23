@@ -11,6 +11,9 @@ nstep = H+1;
 nu = 6; % acceleration dim
 z0_ = [0 0 0 0 0  0 0 0 0 0  0 0 0 -pi/2 0   pi/3 0 pi/4 0 ]';
 Vref = [0.2; 0];
+Thref = [ 0 0  -pi/2 0 0 0   0 0 0 0]';
+
+
 ang = Ts*H*norm(Vref)*2*pi/0.215;
 ang_v = norm(Vref)*2*pi/0.215;
 zT = [z0_(1)+1 0 Vref' norm(Vref)  0 0 z0_(8)+ang ang_v z0_(10)+ang  ang_v -pi/2 0 0 0   0 0 0 0];
@@ -28,7 +31,7 @@ for i=1:nstep
 end
 uref = zeros(H*nu,1);
 
-thref = [ 0 0  -pi/2 0 0 0   0 0 0 0]';
+
 
 %% Init
 pathall =[];
@@ -89,6 +92,9 @@ Eth = kron(eye(H), [zeros(5,1)' 1 zeros(nstate - 6,1)';
 Raug = kron(eye(H), R);
 Q2aug = kron(eye(H), Q2);
 Q3aug = kron(eye(H), Q3);
+
+vref = kron(ones(H,1),Vref);
+thref = kron(ones(H,1),Thref);
 
                 
 
