@@ -11,42 +11,24 @@ fighandle(2) = figure(2); hold on;
 % TB definition
 % sampling time
 dt          = 0.5;
-% TB: obstacle
-%nobj        = 1;
-% obs         = {};
-% obs{1}.v    = [0;0];
-% 
-% xd = 0;
-% yd = 0;
-% obs{1}.poly = [1.1+xd 1.3+xd+0.5 1.4+xd+0.5 0.9+xd;0.1+yd 0.1+yd -0.5+yd -0.5+yd];
-% TB: trajectory dimension
-%dim         = 2; %x,y
-
 % cost ratio
 % y, v, th, u
 c = [1 1 1 1];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 gen_ref_MMD
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Arm definition
-% Arm parameters
 robot=robotproperty_MMD(4, z0_, Ts);
 % Arm joint
-njoint      =5; % joint number
-
-DH          =robot.DH;
-r = robot.r;
-d = robot.d;
-
+njoint      = 5; % joint number
+DH          = robot.DH;
+r           = robot.r;
+d           = robot.d;
 % Arm obs
 % center position (1.05,-0.2)
 obs_arm     =[[1.05;-0.2;0.35] [1.05;-0.2;0.5]];
 obs_arm_r   = 0.35; % radius
-
 ss=50;
-%X_out(1) = 0;
-xV = 0.2;
+
 
 %%
 for steps=1:ss
@@ -65,10 +47,6 @@ for steps=1:ss
     for i=1:H-1
               
         Aaug = blkdiag(eye(nstate*i),kron(eye(H-i),robot.A))*Aaug;
-%         Qaug((i-1)*nstate+1:i*nstate,(i-1)*nstate+1:i*nstate)=Q_arm*0.1;
-%         if i==H
-%             Qaug((i-1)*nstate+1:i*nstate,(i-1)*nstate+1:i*nstate)=Q_arm*10000;
-%         end
         for j=1:i
             Baug(:,(j-1)*nu+1:j*nu)=blkdiag(eye(nstate*i),kron(eye(H-i),robot.A))*Baug(:,(j-1)*nu+1:j*nu);
         end
@@ -80,100 +58,12 @@ for steps=1:ss
     QA =  c(1)*Baug'*Ey'*Ey*Baug + c(2)*Baug'*Ev'*Q2aug*Ev*Baug + c(3)*Baug'*Eth'*Q3aug*Eth*Baug + c(4)*Raug;
     % Linear term
     fA = 2*[c(1)*z0_'*Aaug'*Ey'*Ey*Baug + c(2)*(z0_'*Aaug'*Ev'-vref')*Q2aug*Ev*Baug + c(3)*(z0_'*Aaug'*Eth'-thref')*Q3aug*Eth*Baug]';
-    
-   
-    % Ref
-    
-           
-% %% The cost function
-%     % The weight
-%     c = [1,10,20];
-%     % The distance metric between the original path and the new path
-%     Q1 = eye(nstep*dim);
-%     %Q1((nstep-1)*dim+1:end,(nstep-1)*dim+1:end) =  eye(dim)*1000;
-%     %Q1(1:dim,1:dim) =  eye(dim)*1000;
-%     % The velocity
-%     Vdiff = eye(nstep*dim)-diag(ones(1,(nstep-1)*dim),dim);
-%     Vconst = [-eye(2) eye(2) zeros(2,(nstep-2)*2);[[zeros((nstep-1)*2,2) eye((nstep-1)*2) ]-[eye((nstep-1)*2) zeros((nstep-1)*2,2)]]];
-%     V_ratio = [5 0;0 0];
-%     Rpenalty = kron(eye(nstep),V_ratio);
-%     Q2 = Vconst'*Rpenalty'*Rpenalty*Vconst;
-%     %Q2 = Vdiff(1:(nstep-1)*dim,:)'*Q1(1+dim:end,1+dim:end)*Vdiff(1:(nstep-1)*dim,:);
-%     Vref = [xV,0]*dt;    
-%     Vref_1 = c(2)*kron(ones(1, nstep),Vref)*Rpenalty'*Rpenalty*Vconst;
-%     % The accelaration
-%     Vdiff = eye(nstep*dim)-diag(ones(1,(nstep-1)*dim),dim);
-%     Adiff = Vdiff-diag(ones(1,(nstep-1)*dim),dim)+diag(ones(1,(nstep-2)*dim),dim*2);
-%     Q3 = Adiff(1:(nstep-2)*dim,:)'*Adiff(1:(nstep-2)*dim,:);   
-% %% Cost function update
-%     dir = [zT(1)-(-6) zT(2)-0];
-%     dir_T = (1/norm(dir))*[ zT(2)-0 -zT(1)+(-6)];
-%     dd = kron(ones(nstep,1),dir_T*[-6;0]);
-%     D = kron(eye(nstep),dir_T);
-%     % Distance to reference line
-%     Q1 = D'*D;
-%     Xdis_1 = 2*c(1)*dd'*D;
-%     % The total costj
-%     Qref = 1*(Q1*c(1)+Q2*c(2)+Q3*c(3));
-%     Qabs = 0*Q3*c(3);
-
-
-
-%% MM Constraints 
-% AT = zeros(4*dim,nstep*dim);
-% AT(0*dim+1:1*dim,1:dim) = eye(dim);
-% AT(1*dim+1:2*dim,(nstep-1)*dim+1:nstep*dim) = eye(dim);
-% AT(2*dim+1:3*dim,1:2*dim) = [-eye(dim) eye(dim)];
-% AT(3*dim+1:4*dim,(nstep-2)*dim+1:nstep*dim) = [-eye(dim) eye(dim)];
-% bT = [path(:,1);path(:,end);path(:,2)-path(:,1);path(:,end)-path(:,end-1)];
-% AT = zeros(1*dim,nstep*dim);
-% AT(0*dim+1:1*dim,1:dim) = eye(dim);      
-% bT = [path(:,1)];
-% 
-% %% The Iteration
-% refpath = [];
-% for i=1:nstep
-%     refpath = [refpath;path(:,i)];
-% end
-% oripath = refpath;
-% refinput = ones(1,nstep);
-% 
-% % TB linear term
-% %fT = [-Qref*oripath;];
-% fT = [-[Xdis_1']-[Vref_1']];
-% % TB Quadratic term
-% QT = Qref+Qabs;
-% poly_now(:,:,1)=obs{1}.poly;
-% 
-% %% For initialization on w 
-% Aeq = zeros(1*dim,nstep*dim+nobj*nstep+(nstep-1)*2);
-% Aeq(0*dim+1:1*dim,1:dim) = eye(dim);      
-% beq = [path(:,1)]; 
-% 
-% 
-
-
+      
+  
+        
 
 for k = 1:10
 %% The constraint
-% TB
-%     LT = []; ST = []; margin = 0.2;
-%     for i=1:nstep
-%         for j=1:nobj
-%             poly = obs{j}.poly+obs{j}.v*ones(1,4)*dt*i;
-%             [L,S,d] = d2poly(refpath((i-1)*dim+1:i*dim)',poly');
-%             %LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim) zeros(1,nstep)];
-%             LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim)  zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,H)];
-%             ST = [ST;S-margin];
-%             % Soft constraint
-%             LT= [LT;zeros(1,nstep*2) zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,H)];
-%             ST = [ST;0];
-%         end
-%         
-%     end
-
-% Arm
-
     D=obs_arm_r;
     LA=[];SA=[];
     LLA=[];
@@ -213,31 +103,7 @@ for k = 1:10
         LA = [LA;[ zeros(1,H*6)  zeros(1,i-1) -1 zeros(1,H-i)]];
         SA = [SA;0];
     end
-% TpA
-    % Quadratic term
-%     Q = blkdiag(QT,0.1*QA);
-%     Q = blkdiag(Q,1000*diag(ones(1,nobj*nstep)),1000*diag(ones(1,H)));
-%     % Linear term
-%     f = [fT' 0.1*fA'  zeros(nobj*nstep+H,1)']';
-%     % inequality 
-%     LTpA = [LT;LA];
-%     STpA = [ST;SA];
-%     % equality
-%     Awt = Aaug(1:5,:);
-%     Bwt = Baug(1:5,:);
-%     Aw1 = Aaug(1:nstate:end,:);
-%     Bw1 = Baug(1:nstate:end,:);
-%     AAxy = zeros(nstep,nstep*2);
-%     AAu = eye(nstep);
-%     AAw = [zeros(1,nu*H);-Bw1];
-%     AA = [AT zeros(size(AT,1),5*24 )];
-%     AA = [AA zeros(size(AA,1),nobj*nstep+H)];
-%     BA = [bT;];
-%     
-%     LTpA = [LTpA; [AAxy  [zeros(1,nu*H);-Bw1] zeros(size(AAxy,1),nobj*nstep+H) ] ];
-%     STpA = [STpA;0; -uref_(2:end)' + Aw1*xR(:,1)+0.1];
-%     LTpA = [LTpA; [AAxy  [zeros(1,nu*H);Bw1] zeros(size(AAxy,1),nobj*nstep+H) ] ];
-%     STpA = [STpA;0; uref_(2:end)' - Aw1*xR(:,1)+0.1];
+
 %% QP
 
     % Quadratic term
@@ -250,12 +116,6 @@ for k = 1:10
     soln = quadprog(Q,f,LA,SA,[],[],[],[],[],options);
 %    soln = quadprog(QA,fA,LA,SA,[],[],[],[],[],options);
     % TB path update 
-    %waypoints = soln(1:dim*nstep);
-    %refinput = soln(dim*nstep+1:(dim+1)*nstep);
-    %x_out = soln(1:2:2*25);
-    %y_out = soln(2:2:2*25);
-    %u_out = soln(2*25+1:3*25);
-    %%
     alpha_out = soln(1:6*H);
     states_out = Aaug*z0_+Baug*alpha_out;
     states_out = [z0_ ;states_out];
@@ -269,17 +129,6 @@ for k = 1:10
                    z0_(2)  states_out(2:nstate:end)'];
     
     
-                    
-    % Arm u update
-    
-    %unew = soln((dim)*nstep+1:end-(nobj*nstep+H));
-    
-    
-%     xref=[];
-%     for i=2:H+1
-%         xR(:,i)=robot.A([1:njoint,6:5+njoint],[1:njoint,6:5+njoint])*xR(:,i-1)+robot.B([1:njoint,6:5+njoint],1:nu)*unew((i-2)*nu+1:(i-1)*nu);
-%         xref=[xref;xR(:,i)];
-%     end
     uref=alpha_out;
     
     
@@ -297,16 +146,12 @@ for k = 1:10
 %     end
     xref = states_out;
     
-    %uref = [uref(2:end); uref(end)];
+
     
 end
 k
 toc
-%%
-
-   
-       
-    
+%%   
     traj=zeros(5,NILQR);
     traj(1,:) = states_out(1:nstate:end)';
     traj(2,:) = states_out(2:nstate:end)';
@@ -388,32 +233,11 @@ traLQ_= plot(X_out(1,:),X_out(2,:),'-*','color',[1-(steps/ss),1-(steps/ss),1-(st
 
 hold on
 %end
-% ob = Polyhedron('V',obs{1}.poly');
-% ob.plot('color','g');
-% axis equal
-% axis([-0.5 2.5 -.6 .5 -0.5 1.2]);
-% r=0.14;
-% [X,Y,Z] = cylinder(r);
-% h=mesh(X+1.18,Y-.1,Z*0.5,'facecolor',[1 0 0]);
-% %legend('end-effector','platform','obs. (for platform)','obs. (for arm)','location','eastoutside')
-% view(3);
-% %subplot(1,2,2);
-% xlabel('x[m]')
-% ylabel('y[m]')
-% zlabel('z[m]')
-% 
-% %%%%%%%%%%%%%%%%
-% %pause(0.05)
-% delete(end_)
-% %delete(traLQ_)
 
 end
 
 %%
 figure(fighandle(1));
-% ob = Polyhedron('V',obs{1}.poly');
-% Obs = ob.plot('color','g');
-
 r=0.14;
 [X,Y,Z] = cylinder(r);
 h=mesh(X+1.18,Y-.1,Z*0.5,'facecolor',[1 0 0]);
@@ -435,10 +259,6 @@ if PPL == 1
 for j = 1:nstep-1
     v_out(j) = norm([x_out(j+1)-x_out(j),y_out(j+1)-y_out(j)]);
 end
-% ref.x = x_out;
-% ref.y = y_out;
-% ref.v = [v_out v_out(end)];
-% ref.w = u_out;
 
 ref.x = X_out(1,:);
 ref.y = X_out(2,:);
