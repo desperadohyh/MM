@@ -12,7 +12,7 @@ fighandle(2) = figure(2); hold on;
 % sampling time
 dt          = 0.5;
 % TB: obstacle
-nobj        = 1;
+%nobj        = 1;
 % obs         = {};
 % obs{1}.v    = [0;0];
 % 
@@ -23,7 +23,8 @@ nobj        = 1;
 %dim         = 2; %x,y
 
 % cost ratio
-c = [1 1 1];
+% y, v, th, u
+c = [1 1 1 1];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 gen_ref_MMD
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -35,13 +36,15 @@ robot=robotproperty_MMD(4, z0_, Ts);
 njoint      =5; % joint number
 
 DH          =robot.DH;
+r = robot.r;
+d = robot.d;
 
 % Arm obs
 % center position (1.05,-0.2)
 obs_arm     =[[1.05;-0.2;0.35] [1.05;-0.2;0.5]];
 obs_arm_r   = 0.35; % radius
 
-ss=5;
+ss=50;
 %X_out(1) = 0;
 xV = 0.2;
 
@@ -74,12 +77,14 @@ for steps=1:ss
     
     
     % Quadratic term
-    QA =  Raug + c(1)*Baug'*Ey'*Ey*Baug + c(2)*Baug'*Ev'*Q2aug*Ev*Baug + c(3)*Baug'*Eth'*Q3aug*Eth*Baug;
+    QA =  c(1)*Baug'*Ey'*Ey*Baug + c(2)*Baug'*Ev'*Q2aug*Ev*Baug + c(3)*Baug'*Eth'*Q3aug*Eth*Baug + c(4)*Raug;
     % Linear term
     fA = 2*[c(1)*z0_'*Aaug'*Ey'*Ey*Baug + c(2)*(z0_'*Aaug'*Ev'-vref')*Q2aug*Ev*Baug + c(3)*(z0_'*Aaug'*Eth'-thref')*Q3aug*Eth*Baug]';
     
    
-
+    % Ref
+    
+           
 % %% The cost function
 %     % The weight
 %     c = [1,10,20];
@@ -191,99 +196,125 @@ for k = 1:10
         Bj=Baug((i-1)*nstate+1:i*nstate,1:H*nu);
         s=I(i)-Diff'*Bj(1:njoint,:)*uref;
         l=-Diff'*Bj(1:njoint,:);
-        LLA = [LLA;l];
+        %ll = reshape(l,[5,H]);
+        lL = [];
+        for i_re = 1:H
+            lL = [lL l((i_re-1)*5+1)*(r/d) -l((i_re-1)*5+1)*(r/d) l((i_re-1)*5+2:i_re*5)];
+        end
+        LLA = [LLA;lL];
         SSA = [SSA;s];
-        LA=[LA; [zeros(1,nstep*2) l zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,H-i)]];
-        SA=[SA;s];
+        
+%         LA=[LA;  lL  ];
+%         SA=[SA;s];
         
          % Soft constraint
-        LA = [LA;[zeros(1,nstep*2) zeros(1,H*5) zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,H-i)]];
+        LA=[LA; [ lL  zeros(1,i-1) -1 zeros(1,H-i)]];
+        SA=[SA;s];
+        LA = [LA;[ zeros(1,H*6)  zeros(1,i-1) -1 zeros(1,H-i)]];
         SA = [SA;0];
     end
 % TpA
     % Quadratic term
-    Q = blkdiag(QT,0.1*QA);
-    Q = blkdiag(Q,1000*diag(ones(1,nobj*nstep)),1000*diag(ones(1,H)));
-    % Linear term
-    f = [fT' 0.1*fA'  zeros(nobj*nstep+H,1)']';
-    % inequality 
-    LTpA = [LT;LA];
-    STpA = [ST;SA];
-    % equality
-    Awt = Aaug(1:5,:);
-    Bwt = Baug(1:5,:);
-    Aw1 = Aaug(1:nstate:end,:);
-    Bw1 = Baug(1:nstate:end,:);
-    AAxy = zeros(nstep,nstep*2);
-    AAu = eye(nstep);
-    AAw = [zeros(1,nu*H);-Bw1];
-    AA = [AT zeros(size(AT,1),5*24 )];
-    AA = [AA zeros(size(AA,1),nobj*nstep+H)];
-    BA = [bT;];
-    
-    LTpA = [LTpA; [AAxy  [zeros(1,nu*H);-Bw1] zeros(size(AAxy,1),nobj*nstep+H) ] ];
-    STpA = [STpA;0; -uref_(2:end)' + Aw1*xR(:,1)+0.1];
-    LTpA = [LTpA; [AAxy  [zeros(1,nu*H);Bw1] zeros(size(AAxy,1),nobj*nstep+H) ] ];
-    STpA = [STpA;0; uref_(2:end)' - Aw1*xR(:,1)+0.1];
+%     Q = blkdiag(QT,0.1*QA);
+%     Q = blkdiag(Q,1000*diag(ones(1,nobj*nstep)),1000*diag(ones(1,H)));
+%     % Linear term
+%     f = [fT' 0.1*fA'  zeros(nobj*nstep+H,1)']';
+%     % inequality 
+%     LTpA = [LT;LA];
+%     STpA = [ST;SA];
+%     % equality
+%     Awt = Aaug(1:5,:);
+%     Bwt = Baug(1:5,:);
+%     Aw1 = Aaug(1:nstate:end,:);
+%     Bw1 = Baug(1:nstate:end,:);
+%     AAxy = zeros(nstep,nstep*2);
+%     AAu = eye(nstep);
+%     AAw = [zeros(1,nu*H);-Bw1];
+%     AA = [AT zeros(size(AT,1),5*24 )];
+%     AA = [AA zeros(size(AA,1),nobj*nstep+H)];
+%     BA = [bT;];
+%     
+%     LTpA = [LTpA; [AAxy  [zeros(1,nu*H);-Bw1] zeros(size(AAxy,1),nobj*nstep+H) ] ];
+%     STpA = [STpA;0; -uref_(2:end)' + Aw1*xR(:,1)+0.1];
+%     LTpA = [LTpA; [AAxy  [zeros(1,nu*H);Bw1] zeros(size(AAxy,1),nobj*nstep+H) ] ];
+%     STpA = [STpA;0; uref_(2:end)' - Aw1*xR(:,1)+0.1];
 %% QP
+
+    % Quadratic term
+    soft = 100;
+    Q = blkdiag(QA,soft*eye(H));
+    % Linear term
+    f = [fA'  zeros(H,1)']';
+    
     options =  optimoptions('quadprog','Display','off');
-    soln = quadprog(Q,f,LTpA,STpA,AA,BA,[],[],[],options);
+    soln = quadprog(Q,f,LA,SA,[],[],[],[],[],options);
+%    soln = quadprog(QA,fA,LA,SA,[],[],[],[],[],options);
     % TB path update 
-    pathnew = soln(1:dim*nstep);
-    refinput = soln(dim*nstep+1:(dim+1)*nstep);
-    x_out = soln(1:2:2*25);
-    y_out = soln(2:2:2*25);
+    %waypoints = soln(1:dim*nstep);
+    %refinput = soln(dim*nstep+1:(dim+1)*nstep);
+    %x_out = soln(1:2:2*25);
+    %y_out = soln(2:2:2*25);
     %u_out = soln(2*25+1:3*25);
-    alpha_out = soln(2*25+1:end-(nobj*nstep+H));
-    states_out = Aaug*xR(:,1)+Baug*alpha_out;
-    theta_out = [  Ax_current(1)  states_out(1:10:end)';
-                   Ax_current(2)  states_out(2:10:end)';
-                   Ax_current(3)  states_out(3:10:end)';
-                   Ax_current(4)  states_out(4:10:end)';
-                   Ax_current(5)  states_out(5:10:end)'];
+    %%
+    alpha_out = soln(1:6*H);
+    states_out = Aaug*z0_+Baug*alpha_out;
+    states_out = [z0_ ;states_out];
+    theta_out = [  z0_(6)  states_out(6:nstate:end)';
+                   z0_(12)  states_out(12:nstate:end)';
+                   z0_(14)  states_out(14:nstate:end)';
+                   z0_(16)  states_out(16:nstate:end)';
+                   z0_(18)  states_out(18:nstate:end)'];
+               
+    waypoints = [  z0_(1)  states_out(1:nstate:end)';
+                   z0_(2)  states_out(2:nstate:end)'];
     
     
                     
     % Arm u update
     
-    unew = soln((dim)*nstep+1:end-(nobj*nstep+H));
+    %unew = soln((dim)*nstep+1:end-(nobj*nstep+H));
     
-    oldref=xref;
-    xref=[];
-    for i=2:H+1
-        xR(:,i)=robot.A([1:njoint,6:5+njoint],[1:njoint,6:5+njoint])*xR(:,i-1)+robot.B([1:njoint,6:5+njoint],1:nu)*unew((i-2)*nu+1:(i-1)*nu);
-        xref=[xref;xR(:,i)];
-    end
-    uref=unew;
+    
+%     xref=[];
+%     for i=2:H+1
+%         xR(:,i)=robot.A([1:njoint,6:5+njoint],[1:njoint,6:5+njoint])*xR(:,i-1)+robot.B([1:njoint,6:5+njoint],1:nu)*unew((i-2)*nu+1:(i-1)*nu);
+%         xref=[xref;xR(:,i)];
+%     end
+    uref=alpha_out;
     
     
     
     % break criteria 
-    if norm(refpath-pathnew) < 0.01 && all(norm(xref-oldref)<0.01)
-        pathall = [pathall pathnew]; 
+    if norm(xref-states_out) < 0.00001 
+        pathall = [pathall waypoints]; 
         disp(['converged at step ',num2str(k)]);
         break
     end
-    if norm(refpath-pathnew) < 0.1 && all(LLA*uref<SSA)
-        pathall = [pathall pathnew];
-        disp(strcat('Local Optimal Found at step ',num2str(k)));
-        %break;
-    end
-    refpath = pathnew;
+%     if norm(xori-states_out) < 0.1 && all(LLA*uref<SSA)
+%         pathall = [pathall waypoints];
+%         disp(strcat('Local Optimal Found at step ',num2str(k)));
+%         %break;
+%     end
+    xref = states_out;
     
     %uref = [uref(2:end); uref(end)];
+    
 end
+k
 toc
 %%
 
    
        
-
-    traj=zeros(2,NILQR);
-    traj(1,:) = pathnew(1:dim:dim*NILQR)';
-    traj(2,:) = pathnew(2:dim:dim*NILQR)';
+    
+    traj=zeros(5,NILQR);
+    traj(1,:) = states_out(1:nstate:end)';
+    traj(2,:) = states_out(2:nstate:end)';
+    traj(3,:) = states_out(6:nstate:end)';
+    traj(4,:) = states_out(5:nstate:end)';
+    traj(5,:) = states_out(7:nstate:end)';
     ILQRtraj = traj(:,1:NILQR);
-    xref_=[ILQRtraj; xref_t'; zeros(2,NILQR)];
+    xref_= ILQRtraj;
     
     
     L1 = zeros(7,NILQR);
@@ -291,9 +322,11 @@ toc
     L2 = diag([1000 1000 0 0 0 10 10 ]);
     L2=reshape(repmat(L2,1,NILQR),7,7,NILQR);
     l=zeros(1,NILQR);
-    %u0 = zeros(2,NILQR-1);
+    
+    u0 = zeros(2,NILQR-1);
+    Tx_current = [z0_(1:2); z0_(6); z0_(5); z0_(7)];
 
-
+    %xref_
     [ X_out, u, xbar, ubar, kk, K, sigsu, A, B ] = MaxEntILQR( L2, L1, l, Tx_current, u0, var, xref_ );
 %% Plot
 
@@ -328,7 +361,7 @@ for j = 1:nstep
         
 end
     
-    end_effector(:,j)=M{i}(1:3,1:3)*[0.08;0;0]+M{i}(1:3,4)+[x_out(j);y_out(j);0.1];
+    end_effector(:,j)=M{i}(1:3,1:3)*[0.08;0;0]+M{i}(1:3,4)+[waypoints(1,j);waypoints(2,j);0.1];
 
 end
 %%
@@ -336,24 +369,25 @@ end
 
 figure(fighandle(1));
 %%%%%%%%%%%%%%%%%%%%%%
+z0_ = states_out(nstate+1:nstate*2);
 Tx_current =  X_out(6:10)';
-Ax_current =  states_out(11:15);
+Ax_current =  theta_out(:,2);
 
 theta_implement = [theta_implement Ax_current];
 end_implement = [end_implement  end_effector(:,2)];
-traj_implement = [traj_implement X_out(11:12)'];
+traj_implement = [traj_implement X_out(6:7)'];
 pla_implement = [pla_implement X_out(13:15)'];
 
 
     
-if steps == 3||steps == 8||steps == 13 ||steps == 18||steps == 23||steps == 28||steps == 33||steps == 38
-end_ = plot3(end_effector(1,:),end_effector(2,:),end_effector(3,:),'-*','color',[1-(steps/ss),1-(steps/ss),1-(steps/ss)])
+%if steps == 3||steps == 8||steps == 13 ||steps == 18||steps == 23||steps == 28||steps == 33||steps == 38
+end_ = plot3(end_effector(1,:),end_effector(2,:),end_effector(3,:),'-*','color',[1-(steps/ss),1-(steps/ss),1-(steps/ss)]);
 
 hold on
-traLQ_= plot(X_out(1,:),X_out(2,:),'-*','color',[1-(steps/ss),1-(steps/ss),1-(steps/ss)])
+traLQ_= plot(X_out(1,:),X_out(2,:),'-*','color',[1-(steps/ss),1-(steps/ss),1-(steps/ss)]);
 
 hold on
-end
+%end
 % ob = Polyhedron('V',obs{1}.poly');
 % ob.plot('color','g');
 % axis equal
@@ -377,17 +411,17 @@ end
 
 %%
 figure(fighandle(1));
-ob = Polyhedron('V',obs{1}.poly');
-Obs = ob.plot('color','g');
-hold on
-axis equal
-axis([-0.5 3.5 -.6 .5 -0.5 1.2]);
+% ob = Polyhedron('V',obs{1}.poly');
+% Obs = ob.plot('color','g');
+
 r=0.14;
 [X,Y,Z] = cylinder(r);
 h=mesh(X+1.18,Y-.1,Z*0.5,'facecolor',[1 0 0]);
-etrj = plot3(end_implement(1,:),end_implement(2,:),end_implement(3,:),'*r-')
+etrj = plot3(end_implement(1,:),end_implement(2,:),end_implement(3,:),'*r-');
 ptrj = plot(traj_implement(1,:),traj_implement(2,:),'-or');
-
+hold on
+axis equal
+axis([-0.5 3.5 -.6 .5 -0.5 1.2]);
 %legend([etrj ptrj Obs h],'end-effector','platform','obs. (for platform)','obs. (for arm)','location','eastoutside')
 view(3);
 %subplot(1,2,2);
@@ -468,3 +502,4 @@ plot(ref.w,'-ro')
 ylabel('Angular velocity [rad/s]')
 legend('Vel','AngVel','location','best')
 xlabel('Time step')
+

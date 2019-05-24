@@ -80,27 +80,3 @@ var.N = NILQR;
     
 u0 = zeros(2,NILQR-1);
 xref_ = [path; zeros(3,NILQR)];
-
-
-%% New for MM
-% xA, yA, xAd, yAd, v,   t1, t1d, tR, tRd, tL,  
-% tLd, t2, t2d, t3, t3d,   t4, t4d,t5,t5d 
-Ts = 0.5;
-H = 15;
-nstep = H+1;
-
-z0_ = [0 0 0 0 0  0 0 0 0 0  0 0 0 -pi/2 0   pi/3 0 pi/4 0 ]';
-Vref = [0.2; 0];
-ang = Ts*H*norm(Vref)*2*pi/0.215;
-ang_v = norm(Vref)*2*pi/0.215;
-zT = [z0(1)+1 0 Vref' norm(Vref)  0 0 z0_(8)+ang ang_v z0_(10)+ang  ang_v -pi/2 0 0 0   0 0 0 0];
-
-xref_pre = [linspace(z0_,zT,nstep )];
-        
-
-% rearrange reference
-xref =[];        
-for i=1:nstep
-    xref = [xref; xref_pre(:,i)];
-end
-uref = zeros(horizon*5,1);

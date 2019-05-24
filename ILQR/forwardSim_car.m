@@ -33,6 +33,9 @@ for i=2:N
         
 %         x_f = [x_f;x(:,i)];
 %         u_f = [u_f; u(:,i-1)];
+%x(:,i)
+%xref(:,i)
+%-u(:,i-1)
         dz = [x(:,i) - xref(:,i);-u(:,i-1)];
         cost = cost + 0.5*dz'*L2(:,:,i)*dz;
         

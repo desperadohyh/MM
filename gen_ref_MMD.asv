@@ -9,8 +9,7 @@ Ts = dt;
 H = 15;
 nstep = H+1;
 nu = 6; % acceleration dim
-%z0_ = [0 0 0 0 0  0 0 0 0 0  0 0 0 -pi/2 0   pi/3 0 pi/4 0 ]';
-z0_ = [0 0 0 0 0  0 0 0 0 0  0 -pi/2 0 0 0   0 0 0 0 ]';
+z0_ = [0 0 0 0 0  0 0 0 0 0  0 0 0 -pi/2 0   pi/3 0 pi/4 0 ]';
 Vref = [0.2; 0];
 Thref = [ 0 0  -pi/2 0 0 0   0 0 0 0]';
 
@@ -49,8 +48,8 @@ NILQR=nstep;
 var.N = NILQR;
     
     var.nstep = nstep;
-    var.nx = 5;
-    var.nu = 2;
+    var.nx = nstate;
+    var.nu = nu;
     var.Thres=1e-4;
     var.lineSearchThres=1e-4;
     %dim = 2;
@@ -89,8 +88,8 @@ Eth = kron(eye(H), [zeros(5,1)' 1 zeros(nstate - 6,1)';
                     zeros(6,1)' 1 zeros(nstate - 7,1)';
                     zeros(8,11) eye(8)]);
                 
-Aug = diag([ones(1,H-1) 10]);
-
+Aug = diag([one()]);
+Aug = 
 Raug = kron(Aug, R);
 Q2aug = kron(Aug, Q2);
 Q3aug = kron(Aug, Q3);

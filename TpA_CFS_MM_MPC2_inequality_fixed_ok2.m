@@ -27,7 +27,7 @@ generate_reference
 
 % Arm definition
 % Arm parameters
-robot=robotproperty_hc_new(4);
+robot=robotproperty_hc(4);
 % Arm joint
 njoint      =5; % joint number
 nstate      =10; % QP variable dim
