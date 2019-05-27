@@ -60,6 +60,7 @@ for steps=1:ss
     fA = 2*[c(1)*z0_'*Aaug'*Ey'*Ey*Baug + c(2)*(z0_'*Aaug'*Ev'-vref')*Q2aug*Ev*Baug + c(3)*(z0_'*Aaug'*Eth'-thref')*Q3aug*Eth*Baug]';
       
   
+tic
         
 
 for k = 1:10
