@@ -1,4 +1,4 @@
-function robot=robotproperty_hc_new(id, z0_, Ts)
+function robot=robotproperty_MMD(id, z0_, Ts)
 
 switch id
     case 1
