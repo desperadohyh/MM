@@ -12,11 +12,11 @@ close all
 % serial chain manipulator. The DH parameters are relative to the previous
 % line in the matrix, corresponding to the previous joint attachment. 
 
-dhparams = [0   	0	    0   	0;
-            -0.18	0       0       0
-            0	   -pi/2	0.05	0;
-            0.12   	0	    0   	0;
-            0.12    0	    0   	0];
+dhparams = [-0.18	0       0       0;
+            0	    -pi/2	0.05	0;
+            0.12   	0	    0       0;
+            0.12    0	    0   	0;
+            0.08   	0	    0   	0;];
 
 % dhparams = [0   	0	    0   	  0;
 %             0.034,	0       0.0825,   0
@@ -85,7 +85,7 @@ body3.Joint = jnt3;
 body4.Joint = jnt4;
 body5.Joint = jnt5;
 
-
+%%
 addBody(robot,body2,'body1')
 addBody(robot,body3,'body2')
 addBody(robot,body4,'body3')
@@ -105,17 +105,17 @@ show(robot);
 axis([-0.5,0.5,-0.5,0.5,-0.5,0.5])
 axis off
 %%
-% figure
-% randConfig = robot.randomConfiguration;
-% tform = getTransform(robot,randConfig,'body5','base');
-% 
-% show(robot,randConfig);
-% 
-% %%
-% ik = robotics.InverseKinematics('RigidBodyTree',robot);
-% weights = [0.25 0.25 0.25 1 1 1];
-% initialguess = robot.homeConfiguration;
-% %%
-% figure
-% [configSoln,solnInfo] = ik('body5',tform,weights,initialguess);
-% show(robot,configSoln);
+figure
+randConfig = robot.randomConfiguration;
+tform = getTransform(robot,randConfig,'body5','base');
+
+show(robot,randConfig);
+
+%%
+ik = robotics.InverseKinematics('RigidBodyTree',robot);
+weights = [0.25 0.25 0.25 1 1 1];
+initialguess = robot.homeConfiguration;
+%%
+figure
+[configSoln,solnInfo] = ik('body5',tform,weights,initialguess);
+show(robot,configSoln);
