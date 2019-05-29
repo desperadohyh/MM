@@ -1,4 +1,4 @@
-function [xref_t,xref,xR,refpath]=generate_reference_loop_pick(var,Ax_current,Tx_current,zAT,horizon,nstate,u0,mode )
+function [xref_t,xref,xR,refpath]=generate_reference_loop_pick(var,Ax_current,Tx_current,zAT,horizon,nstate,u0,mode,target,t_marg )
 
 nstep = horizon+1;
 
@@ -18,12 +18,12 @@ switch mode
                 
         %% Turtlebot
         
-        z0(1) = Tx_current(1);
-        z0(2) = Tx_current(2);
-        path = [linspace(Tx_current(1),Tx_current(1)+2,nstep);
+        path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
                 linspace(Tx_current(2),0,nstep)];
         
-    case 2  
+    case 2
+        path = [linspace(Tx_current(1),target-t_marg(:,mode),nstep);
+                linspace(Tx_current(2),0,nstep)];
  
 
     case 3

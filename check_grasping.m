@@ -1,8 +1,21 @@
 %% check grasping
-if norm(end_effector(:,2)-target)<0.02
+
+if norm([Ax_current;0.05]-(target+t_marg(:,mode)))<0.02
+    %%% Platform stop%%
     
     if mode == 1   % Ready to grasp and lift
-    %%% Grasping command while loop %%%% linspace(g_current(5),g_open(5),10)
+    %g_current = 
+        grip_ang = [linspace(g_current,g_open(5),10)]';
+        ii = 0;
+        %%%%% Subscribe gripper angle%%%
+        v_grip = 0.2;
+        
+        while v_grip > 0.1 && ii<11
+            grip_pub = grip_ang(ii);
+            ii = ii+1;
+            pause(0.1);
+        end
+        
         grasp = 1;     
     
         zB = [0;Ax_current(2);Ax_current(3)/2;Ax_current(4);Ax_current(5)];
@@ -11,7 +24,7 @@ if norm(end_effector(:,2)-target)<0.02
                     linspace(Ax_current(3),zB(3),10);
                     linspace(Ax_current(4),zB(4),10);
                     linspace(Ax_current(5),zB(5),10);
-                     g_current(5)];
+                     g_current*ones(1,10)];
 
          for j = 1:10
              pub = xref_lift(:,j);
@@ -28,6 +41,10 @@ if norm(end_effector(:,2)-target)<0.02
     %              end
                  mode = 2;  % need to restart
 %            fail = 0;%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+             %%%%%%% lazy mode 2%%%%%%%%%%%%%%%%%%%%%%
+             
+             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                  break
              end
              mode = 3;  % Ready to move the object       

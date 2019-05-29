@@ -39,8 +39,8 @@ obs_arm_r   = 0.05; % radius
 
 
 % Target
-
-target = [-1; 0; 0.05];
+target = [0; 0; 0.05];
+t_marg = [0.35 0.2; 0  0; 0 0];
 
 ss=35;
 xV = -0.15
@@ -48,17 +48,22 @@ xV = -0.15
 % Initializa conditions
 pass = 0;
 mode = 1;
-t_marg = [0.35 0.2; 0  0; 0 0];
+
 
 % for simulation testing
 fail = 1;
 
 % load grasping profile
+grip_open = 0.01;
+grip_close = 0.2;
+g_size =10;
+
 ccc = [load('get_far')];
 theta_far = ccc.thetas;
-
 ddd = [load('get_close')];
 theta_close = ddd.thetas;
+
+th_size = size(theta_close,2);
 
 for steps=1:ss
 %% Mode check and switch
@@ -493,53 +498,65 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%
 %check_grasping
 %%%%%%%%%%%%%%%%%%%%%%%%
-% %% check grasping
-% if norm(end_effector(:,2)-target)<0.02
-%     
-%     if mode == 1   % Ready to grasp and lift
-%     %%% Grasping command while loop %%%% linspace(g_current(5),g_open(5),10)
-%         grasp = 1;     
-%     
-%         zB = [0;Ax_current(2);Ax_current(3)/2;Ax_current(4);Ax_current(5)];
-%         xref_lift = [linspace(Ax_current(1),zB(1),10);
-%                     linspace(Ax_current(2),zB(2),10);
-%                     linspace(Ax_current(3),zB(3),10);
-%                     linspace(Ax_current(4),zB(4),10);
-%                     linspace(Ax_current(5),zB(5),10);
-%                      g_current(5)];
-% 
-%          for j = 1:10
-%              pub = xref_lift(:,j);
-%              
-% 
-%              if  fail == 1%sensor>threshold
-%                  % FAIL: Play back and Open griper 
-%                  for b = j-1:-1:1
-%                      pub = xref_lift(:,j);                     
-%                  end
-%                  grasp = 0;
-%     %              for j = 1:10
-%     %                  pub = xref_lift(:,j);
-%     %              end
-%                  mode = 2;  % need to restart
-% %            fail = 0;%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                  break
-%              end
-%              mode = 3;  % Ready to move the object       
-%          end
-%          
-%     elseif mode == 3  % Ready to put down
-%         for b = 10-1:-1:1
-%             pub = xref_lift(:,j);            
-%         end
-%         grasp = 0;
-%         mode = 1;  % Ready for new task
-%     
-%      
-%     end
-%     
-%     
-% end
+%% check grasping
+norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))
+if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.02
+    %%% Platform stop%%
+    
+    if mode == 1   % Ready to grasp and lift
+    %g_current = 
+        grip_ang = [linspace(grip_open,grip_close,g_size)]';
+        ii = 0;
+        %%%%% Subscribe gripper angle%%%
+        v_grip = 0.2;
+        
+        while v_grip > 0.1 && ii<g_size+1
+            grip_pub = grip_ang(ii);
+            ii = ii+1;
+            pause(0.1);
+        end        
+        grasp = 1;     
+    
+        %zB = [0;Ax_current(2);Ax_current(3)/2;Ax_current(4);Ax_current(5)];
+        xref_lift = theta_far;
+                     
+
+         for j = 1:g_size
+             pub = xref_lift(:,j);
+             
+
+             if  fail == 1%sensor>threshold
+                 % FAIL: Play back and Open griper 
+                 for b = j-1:-1:1
+                     pub = xref_lift(:,j);                     
+                 end
+                 grasp = 0;
+    %              for j = 1:g_size
+    %                  pub = xref_lift(:,j);
+    %              end
+                 mode = 2;  % need to restart
+%            fail = 0;%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+             %%%%%%% lazy mode 2%%%%%%%%%%%%%%%%%%%%%%
+             
+             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                 break
+             end
+             mode = 3;  % Ready to move the object       
+         end
+         
+    elseif mode == 3  % Ready to put down
+        for b = g_size-1:-1:1
+            pub = xref_lift(:,j);            
+        end
+        grasp = 0;
+        mode = 1;  % Ready for new task
+    
+     
+    end
+    
+    
+end
 end
 
 %%
