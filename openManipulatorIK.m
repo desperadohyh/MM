@@ -15,7 +15,7 @@ axes = show(robot);
 axes.CameraPositionMode = 'auto';
 
 %% Create a set of desired wayPoints
-wayPoints = [0.2 0 -0.05; 0.2 0 0.1; 0.1 0 0.2];
+wayPoints = [0.35 0 -0.05; 0.27 0 0.1; 0.1 0 0.2];
 % wayPoints = [0.2 -0.2 0.02;0.25 0 0.15; 0.2 0.2 0.02]; % Alternate set of wayPoints
 %wayPoints = [0.2 -0.2 0.02;0.15 0 0.28;0.15 0.05 0.2; 0.15 0.09 0.15;0.1 0.12 0.1; 0.04 0.1 0.2;0.25 0 0.15; 0.2 0.2 0.02];
 exampleHelperPlotWaypoints(wayPoints);
@@ -46,7 +46,7 @@ eePositions = ppval(trajectory,linspace(0,trajectory.breaks(end),numTotalPoints)
 % previous configuration as initial guess
 for idx = 1:size(eePositions,2)
     tform = trvec2tform(eePositions(:,idx)');
-    th = (numTotalPoints-idx)*pi*3/180;
+    th = (numTotalPoints-idx)*pi/180;
     tform(1:3,1:3) = [cos(th) 0 sin(th);
                        0      1   0    ;
                      -sin(th) 0 cos(th)];
