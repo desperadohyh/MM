@@ -6,7 +6,7 @@ nstep = horizon+1;
 
 switch mode
     case 1  %approach
-        %% Arm
+        % Arm
         
         delay = 2;        
         xref_pre = [[linspace(Ax_current(1),zAT(1),delay) zAT(1)*ones(1,nstep-delay)];
@@ -16,21 +16,54 @@ switch mode
                     [linspace(Ax_current(5),zAT(5),delay) zAT(5)*ones(1,nstep-delay)];
                     zeros(5,nstep)];
                 
-        %% Turtlebot
+        % Turtlebot
+        
         
         path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
                 linspace(Tx_current(2),0,nstep)];
         
-    case 2
+    case 2  % Retry
         path = [linspace(Tx_current(1),target-t_marg(:,mode),nstep);
                 linspace(Tx_current(2),0,nstep)];
  
 
-    case 3
+    case 3  % Leave
+        
+        % Arm
+        delay = 2;        
+        xref_pre = [[linspace(Ax_current(1),zAT(1),delay) zAT(1)*ones(1,nstep-delay)];
+                    [linspace(Ax_current(2),zAT(2),delay) zAT(2)*ones(1,nstep-delay)];
+                    [linspace(Ax_current(3),zAT(3),delay) zAT(3)*ones(1,nstep-delay)];
+                    [linspace(Ax_current(4),zAT(4),delay) zAT(4)*ones(1,nstep-delay)];
+                    [linspace(Ax_current(5),zAT(5),delay) zAT(5)*ones(1,nstep-delay)];
+                    zeros(5,nstep)];
+                
+        % Turtlebot
+        
+        path = [linspace(Tx_current(1),Tx_current(1)+2,nstep);
+                linspace(Tx_current(2),0,nstep)];
+            
+    case 4  % Go back to neutral
+        % Arm
+        
+        delay = 2;        
+        xref_pre = [[linspace(Ax_current(1),zAT(1),delay) zAT(1)*ones(1,nstep-delay)];
+                    [linspace(Ax_current(2),zAT(2),delay) zAT(2)*ones(1,nstep-delay)];
+                    [linspace(Ax_current(3),zAT(3),delay) zAT(3)*ones(1,nstep-delay)];
+                    [linspace(Ax_current(4),zAT(4),delay) zAT(4)*ones(1,nstep-delay)];
+                    [linspace(Ax_current(5),zAT(5),delay) zAT(5)*ones(1,nstep-delay)];
+                    zeros(5,nstep)];
+                
+        % Turtlebot
         
         
-    case 4
+        path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
+                linspace(Tx_current(2),0,nstep)];   
+            
+       
         
+        
+           
 end
 
         
