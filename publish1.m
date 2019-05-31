@@ -2,7 +2,7 @@
 %clear all
 
 %%
-%load('nice_result_data.mat')
+%load('simulation_data.mat')
 rosshutdown
 rosinit('http://10.42.0.137:11311')
 sub = rossubscriber('/odom','nav_msgs/Odometry');
@@ -28,8 +28,8 @@ griper_position = rosmessage('std_msgs/Float64MultiArray');
 
 value = [];
 
-ss = size(theta_out,2);
-theta_implement = [theta_out(2:5,:); linspace(0.015,-0.005,ss)];
+
+%theta_implement = [theta_out(2:5,:); linspace(0.015,-0.005,ss)];
 
 %% reset
 disp('reset');
@@ -60,7 +60,18 @@ for nstep_r = 1:10
     toc
     
 end
-r = robotics.Rate(2);
+
+% Split data
+%%
+split = [1 35 62 63 113 142 182 198];
+for s = 1:size(split,2)-1
+    theta_implement_{s} = theta_implement(:,split(s):split(s+1)-1);
+    Dt_{s} = Dt(split(s):split(s+1)-1);
+    v_{s}= ref.v(split(s):split(s+1)-1);
+    w_{s}= ref.w(split(s):split(s+1)-1);
+end
+%%
+%r = robotics.Rate(2);
 
 
 disp('ros');
@@ -70,59 +81,57 @@ a=1;
 %load('nice_result_data.mat')
 %%
 % pause(10)
+for s = 1:size(Dt_,2)
+    r = robotics.Rate(1/Dt_{s}(1));
+    ss = size(theta_implement_{s},2);
+    
+    for nstep = 1:ss
+        tic
+    %     if nstep >15
+    %         a=0.5;
+    %     end
+    current_effort = msgj.Effort(3:7);
+        cmv.Linear.X = v_{s}(nstep)*a;
+        cmv.Angular.Z = w_{s}(nstep);
+        %send(pub,cmv);
 
-for nstep = 1:ss
-    tic
-%     if nstep >15
-%         a=0.5;
-%     end
-current_effort = msgj.Effort(3:7)
-    cmv.Linear.X = ref.v(nstep)*a;
-    cmv.Angular.Z = ref.w(nstep);
-    %send(pub,cmv);
-    
-%     theta1 = ref.theta2(nstep);
-%     theta2 = ref.theta3(nstep);
-%     theta3 = ref.theta4(nstep);
-%     theta4 = ref.theta5(nstep);
-    %time = 0.1;
-    %acceleration = 0.75;
-    
-    theta1 = theta_implement(1,nstep);
-    theta2 = theta_implement(2,nstep);
-    theta3 = theta_implement(3,nstep);
-    theta4 = theta_implement(4,nstep);   
-    
-    thetas.Data = [theta_implement(1,nstep),theta_implement(1:4,nstep)'];
-    %send(pubM,thetas);
-    griper_position.Data = theta_implement(5,nstep);
-    send(pubG,griper_position);
-    %speed.Data = [time,acceleration];
-    
-    
-    %%send(pubS,speed);
-    
-    msgj = receive(subj,10);
-    current_joints = msgj.Position(3:6);
-    value = [value current_joints];
-%     if nstep == 1
-%         value = current_joints;
-%     else
-%         value = horzcat(value,current_joints);
-%     end
-    disp(nstep)
-    %disp(msgj.Position(3:6))
-%     joint1 = current_joints(1);
-%     joint2 = current_joints(2);
-%     joint3 = current_joints(3);
-%     joint4 = current_joints(4);
-%     
-%     plot(nstep,current_joints)
-%     hold on
-    
-    waitfor(r);
-    toc
-    
+
+        theta1 = theta_implement_{s}(1,nstep);
+        theta2 = theta_implement_{s}(2,nstep);
+        theta3 = theta_implement_{s}(3,nstep);
+        theta4 = theta_implement_{s}(4,nstep);   
+
+        thetas.Data = [theta_implement_{s}(1,nstep),theta_implement_{s}(1:4,nstep)'];
+        %send(pubM,thetas);
+        griper_position.Data = theta_implement_{s}(5,nstep);
+        send(pubG,griper_position);
+        %speed.Data = [time,acceleration];
+
+
+        %%send(pubS,speed);
+
+        msgj = receive(subj,10);
+        current_joints = msgj.Position(3:6);
+        value = [value current_joints];
+    %     if nstep == 1
+    %         value = current_joints;
+    %     else
+    %         value = horzcat(value,current_joints);
+    %     end
+        disp(nstep)
+        %disp(msgj.Position(3:6))
+    %     joint1 = current_joints(1);
+    %     joint2 = current_joints(2);
+    %     joint3 = current_joints(3);
+    %     joint4 = current_joints(4);
+    %     
+    %     plot(nstep,current_joints)
+    %     hold on
+
+        waitfor(r);
+        toc
+
+    end
 end
 
 %%

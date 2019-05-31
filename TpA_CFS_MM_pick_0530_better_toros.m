@@ -63,8 +63,8 @@ fail = 0;
 eee =0;
 
 % load grasping profile
-grip_open = 0.01;
-grip_close = 0.2;
+grip_open = 0.015;
+grip_close = -0.005;
 g_size =10;
 g_current = grip_open;
 
@@ -818,3 +818,6 @@ plot(ref.w,'-ro')
 ylabel('Angular velocity [rad/s]')
 legend('Vel','AngVel','location','best')
 xlabel('Time step')
+
+%%
+theta_implement = theta_implement(2:6,:);
