@@ -2,7 +2,7 @@
 %clear all
 
 %%
-%load('simulation_data.mat')
+load('simulation_data.mat')
 rosshutdown
 rosinit('http://10.42.0.137:11311')
 sub = rossubscriber('/odom','nav_msgs/Odometry');
@@ -48,8 +48,8 @@ for nstep_r = 1:10
     tic
     current_effort = msgj.Effort(3:7)
     thetas.Data = [reset(1,nstep_r),reset(1:4,nstep_r)'];
-    %speed.Data = [time,acceleration];
-    %send(pubM,thetas);
+    
+    send(pubM,thetas);
     
     
     griper_position.Data = [reset(5,nstep_r)];
@@ -93,7 +93,7 @@ for s = 1:size(Dt_,2)
     current_effort = msgj.Effort(3:7);
         cmv.Linear.X = v_{s}(nstep)*a;
         cmv.Angular.Z = w_{s}(nstep);
-        %send(pub,cmv);
+        send(pub,cmv);
 
 
         theta1 = theta_implement_{s}(1,nstep);
@@ -102,31 +102,19 @@ for s = 1:size(Dt_,2)
         theta4 = theta_implement_{s}(4,nstep);   
 
         thetas.Data = [theta_implement_{s}(1,nstep),theta_implement_{s}(1:4,nstep)'];
-        %send(pubM,thetas);
+        send(pubM,thetas);
         griper_position.Data = theta_implement_{s}(5,nstep);
         send(pubG,griper_position);
-        %speed.Data = [time,acceleration];
+        
 
 
-        %%send(pubS,speed);
-
+       
         msgj = receive(subj,10);
         current_joints = msgj.Position(3:6);
         value = [value current_joints];
-    %     if nstep == 1
-    %         value = current_joints;
-    %     else
-    %         value = horzcat(value,current_joints);
-    %     end
+    
         disp(nstep)
-        %disp(msgj.Position(3:6))
-    %     joint1 = current_joints(1);
-    %     joint2 = current_joints(2);
-    %     joint3 = current_joints(3);
-    %     joint4 = current_joints(4);
-    %     
-    %     plot(nstep,current_joints)
-    %     hold on
+   
 
         waitfor(r);
         toc
