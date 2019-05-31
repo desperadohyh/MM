@@ -69,6 +69,9 @@ g_current = grip_open;
 
 ccc = [load('theta_')];
 theta_ = ccc.theta_;
+move_marg = [  0 0.31 0.27 0.23 0.2;
+               0   0   0   0   0;
+               0   0   0   0   0];
 
 th_size = size(theta_{2},2);
 
@@ -93,7 +96,7 @@ end
     
 
 %norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))
-if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
+if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05 || mode ==2
     %%% Platform stop%%
     
     if mode == 1   % Ready to grasp and lift
@@ -134,10 +137,11 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
             pla_implement = [pla_implement [0 0 0]'];
 
             %%%% Get effort %%%%%
-%             if j >2
-%                 effort = randi(5);                
-%             end
-%              
+            if j >2 && mode ==3
+                disp('fail')
+                effort = randi(5);                
+            end
+             
 
              if  effort > 1 %sensor>threshold
                  % FAIL: Play back and Open griper
@@ -175,15 +179,24 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
              [Min, idx]=min(abs([1 2 3 4 5 ] - effort*ones(1,5)));
              xref_lift = theta_{idx};
              % Move forward
-             while  norm([Tx_current(1:2);0.05]-(target+move_marg(:,idx)))<0.05
-                     grip_pub = grip_ang(ii);
-                     ii = ii-1;
-                     pause(0.1);
+             while  Tx_current(1) - (target(1)+move_marg(1,idx))>0%norm([Tx_current(1:2);0.05]-(target+move_marg(:,idx)))>0.05
+                     X_out(6) =  X_out(6) - 0.1*dt;
+                     Tx_current(1) = X_out(6);
+                     theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
+                     MODE = [MODE mode];
+                     mode
+                     end_effector = ee_plot(theta_implement, X_out(6:7),DH);
+                     end_implement = [end_implement  end_effector];
+                     traj_implement = [traj_implement Tx_current(1:2)];
+                     pla_implement = [pla_implement [0 -0.1 0]'];
              end        
              grasp = 0;
+             Tx_current =  X_out(6:10)';
+             Ax_current =  theta_implement(:,end);
+             effort = 0;
              
              %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                 break
+                 %break
              end
              mode = 3;  % Ready to move the object
              target = [1.5; 0; 0.05];

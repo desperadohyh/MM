@@ -47,18 +47,20 @@ obs{1}.poly = [ obs_c(1)-width(1)+xd obs_c(1)+width(1)+xd obs_c(1)+width(2)+xd o
 target = [-0.2; 0; 0.05];
 t_marg = [0.35 0.2 0.35 0; 0  0  0  0; 0 0 0 0];
 
-ss=65;
+ss=85;
 xV = -0.15;
 
 % Initializa conditions
 pass = 0;
 mode = 1;
 MODE = [];
-effort = 0;
-
+effort = 3;
+idx = 1;
+Dt = [];
 
 % for simulation testing
 fail = 0;
+eee =0;
 
 % load grasping profile
 grip_open = 0.01;
@@ -69,6 +71,9 @@ g_current = grip_open;
 
 ccc = [load('theta_')];
 theta_ = ccc.theta_;
+move_marg = [  0 0.31 0.27 0.23 0.2;
+               0   0   0   0   0;
+               0   0   0   0   0];
 
 th_size = size(theta_{2},2);
 
@@ -91,12 +96,19 @@ end
 
     %% check grasping
     
+if mode ==2
+    eee = [ eee norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))]
+    Tx_current(1:2)
+    target
+    t_marg(:,mode)
+    target+t_marg(:,mode)
+    %pause
+end
 
-%norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))
-if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
+if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05 
     %%% Platform stop%%
     
-    if mode == 1   % Ready to grasp and lift
+    if mode == 1    % Ready to grasp and lift
         %%%%% Subscribe gripper angle%%%
         g_current = grip_open;  %%%%%%%%%%%%%%%%
         grip_ang = [linspace(g_current,grip_close,g_size)]';
@@ -116,11 +128,12 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
             end_implement = [end_implement  end_effector];
             traj_implement = [traj_implement X_out(11:12)'];
             pla_implement = [pla_implement [0 0 0]'];
+            Dt = [Dt dt*0.2];
         end        
         grasp = 1;
         g_current = grip_pub; %%%%%%%%%%%%%%%%
     
-        xref_lift = theta_{1};
+        xref_lift = theta_{idx};
                      
 
         for j = 1:th_size  % lifting the box
@@ -132,14 +145,16 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
             end_implement = [end_implement  end_effector];
             traj_implement = [traj_implement X_out(11:12)'];
             pla_implement = [pla_implement [0 0 0]'];
+            Dt = [Dt dt*0.2];
 
             %%%% Get effort %%%%%
-%             if j >2
+%             if j >2 && mode ==3
+%                 disp('fail')
 %                 effort = randi(5);                
 %             end
-%              
+             
 
-             if  effort > 1 %sensor>threshold
+             if  effort > 1 && j>3%sensor>threshold
                  % FAIL: Play back and Open griper
                  mode = 2;  % need to restart
                  % lower gripper
@@ -151,6 +166,7 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
                      end_implement = [end_implement  end_effector];
                      pla_implement = [pla_implement [ 0 0 0]'];
                      MODE = [MODE mode];
+                     Dt = [Dt dt*0.2];
                  end
                 
                  % open gripper
@@ -165,6 +181,7 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
                      end_implement = [end_implement  end_effector];
                      traj_implement = [traj_implement X_out(11:12)'];
                      pla_implement = [pla_implement [0 0 0]'];
+                     Dt = [Dt dt*0.2];
                  end        
                  grasp = 0;
                  g_current = grip_pub; %%%%%%%%%%%%%%%%
@@ -174,23 +191,55 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
              %%%%%%% lazy mode 2%%%%%%%%%%%%%%%%%%%%%%
              [Min, idx]=min(abs([1 2 3 4 5 ] - effort*ones(1,5)));
              xref_lift = theta_{idx};
+             t_marg(:,mode) = move_marg(:,idx);
+             zAT = [0 ;-pi;theta_{idx}(:,1)];
+             target = [-0.2; 0; 0.05];
+             xV = -0.15;
              % Move forward
-             while  norm([Tx_current(1:2);0.05]-(target+move_marg(:,idx)))<0.05
-                     grip_pub = grip_ang(ii);
-                     ii = ii-1;
-                     pause(0.1);
-             end        
+%              while  Tx_current(1) - (target(1)+move_marg(1,idx))>0%norm([Tx_current(1:2);0.05]-(target+move_marg(:,idx)))>0.05
+%                      X_out(6) =  X_out(6) - 0.1*dt;
+%                      Tx_current(1) = X_out(6);
+%                      theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
+%                      MODE = [MODE mode];
+%                      mode
+%                      end_effector = ee_plot(theta_implement, X_out(6:7),DH);
+%                      end_implement = [end_implement  end_effector];
+%                      traj_implement = [traj_implement Tx_current(1:2)];
+%                      pla_implement = [pla_implement [0 -0.1 0]'];
+%              end        
              grasp = 0;
-             
+             %Tx_current =  X_out(6:10)';
+             Ax_current =  theta_implement(:,end);
+             effort = 0;
              %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                  break
              end
              mode = 3;  % Ready to move the object
+             %MODE = [MODE mode];
              target = [1.5; 0; 0.05];
              xV = 0.15;
              zAT(2) = -pi/2; 
          end
-         
+    elseif mode == 2  % Second try
+        % reach
+        xref_reach = [linspace(Ax_current(3),zAT(3),10);
+                      linspace(Ax_current(4),zAT(4),10);
+                      linspace(Ax_current(5),zAT(5),10)];
+                  
+        for j = 1:10           
+            pub = xref_reach(:,j);
+            theta_implement = [theta_implement [Ax_current(1:2); xref_reach(:,j); theta_implement(6,end)]];
+            traj_implement = [traj_implement X_out(11:12)'];
+            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
+            end_implement = [end_implement  end_effector];
+            pla_implement = [pla_implement [0 0 0]'];
+            MODE = [MODE mode];
+            Dt = [Dt dt*0.2];
+        end
+        mode = 1;        
+        t_marg(:,mode) = move_marg(:,idx);
+        %pause
+        %MODE = [MODE mode];
     elseif mode == 3  % Ready to put down
         ii=g_size;
         
@@ -205,8 +254,10 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
             end_implement = [end_implement  end_effector];
             traj_implement = [traj_implement X_out(11:12)'];
             pla_implement = [pla_implement [0 0 0]'];
+            Dt = [Dt dt*0.2];
         end        
         grasp = 0;
+        g_current = grip_pub;
         
         
         % restore 
@@ -218,6 +269,7 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
             end_implement = [end_implement  end_effector];
             pla_implement = [pla_implement [0 0 0]'];
             MODE = [MODE mode];
+            Dt = [Dt dt*0.2];
         end
         mode = 4;  % Ready for new task
         zAT = [0;-pi/2;0;0;0];
@@ -230,7 +282,8 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
         
     end
     
-Ax_current = theta_implement(:,end); 
+Ax_current = theta_implement(:,end);
+%Tx_current =  X_out(6:10)';
 
 
     %% Motion planning
@@ -663,6 +716,7 @@ end_implement = [end_implement  end_out];
 traj_implement = [traj_implement X_out(11:12)'];
 pla_implement = [pla_implement X_out(13:15)'];
 MODE = [MODE mode];
+Dt = [Dt dt];
 
 end
 
@@ -746,7 +800,8 @@ plot(theta_implement(3,:),'--x')
 plot(theta_implement(4,:),'-r*')
 plot(theta_implement(5,:),'-go')
 plot(theta_implement(6,:),'-yo')
-legend('platform angle','\theta_1','\theta_2','\theta_3','\theta_4','Gripper' ,'location','eastoutside')
+plot(MODE)
+legend('platform angle','\theta_1','\theta_2','\theta_3','\theta_4','Gripper', 'Mode' ,'location','eastoutside')
 ylabel('Angle[rad]')
 xlabel('Time step')
 
