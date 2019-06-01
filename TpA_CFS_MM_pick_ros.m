@@ -1,12 +1,38 @@
 clc
-clear all
+clear
 close all
-fighandle = [];
-fighandle(1) = figure(1); hold on;
-set(gcf, 'position', [0 0 500 500]);
-fighandle(2) = figure(2); hold on;
+rosshutdown
+% fighandle = [];
+% fighandle(1) = figure(1); hold on;
+% set(gcf, 'position', [0 0 500 500]);
 
-    
+
+%% ros
+
+rosinit
+
+odom_sub = rossubscriber('/om_with_tb3/odom','nav_msgs/Odometry');
+
+odom_path_pub = rospublisher('path', 'nav_msgs/Path');
+odom_path_msg = rosmessage('nav_msgs/Path');
+odom_path_msg.Header.FrameId = 'odom';
+
+joint_sub = rossubscriber('/om_with_tb3/joint_states', 'sensor_msgs/JointState');
+
+joint1_pub = rospublisher('joint1_waypoints', 'std_msgs/Float64MultiArray');
+joint2_pub = rospublisher('joint2_waypoints', 'std_msgs/Float64MultiArray');
+joint3_pub = rospublisher('joint3_waypoints', 'std_msgs/Float64MultiArray');
+joint4_pub = rospublisher('joint4_waypoints', 'std_msgs/Float64MultiArray');
+
+joint1_msg = rosmessage('std_msgs/Float64MultiArray');
+joint2_msg = rosmessage('std_msgs/Float64MultiArray');
+joint3_msg = rosmessage('std_msgs/Float64MultiArray');
+joint4_msg = rosmessage('std_msgs/Float64MultiArray');
+
+r = robotics.Rate(0.5);
+
+%% parameter definition
+
 %% parameter definition
 % TB definition
 % sampling time
@@ -25,125 +51,119 @@ nstate      =10; % QP variable dim
 nu          =5; % acceleration dim 
 DH          =robot.DH;
 
-%% OBS
-obs_c = [1.1;-0.2];
-width = [0.4 0.8]/2;
-hight = 0.6/2;
-% Arm obs
-obs_arm     =[[obs_c;-0.1 ] [obs_c;0.5]];
-obs_arm_r   = 0.2; % radius
-% TB: obstacle
-nobj        = 1;
-obs         = {};
-obs{1}.v    = [0;0];
-margin = 0.2;
 
-xd = 0;
-yd = 0;
-obs{1}.poly = [ obs_c(1)-width(1)+xd obs_c(1)+width(1)+xd obs_c(1)+width(2)+xd obs_c(1)-width(2)+xd;
-                obs_c(2)+hight+yd obs_c(2)+hight+yd obs_c(2)-hight+yd obs_c(2)-hight+yd]; % 4 1 2 3
 %%
 % Target
 target = [-0.2; 0; 0.05];
 t_marg = [0.35 0.2 0.35 0; 0  0  0  0; 0 0 0 0];
 
-ss=65;
+
 xV = -0.15;
 
-% Initializa conditions
-pass = 0;
-mode = 1;
-MODE = [];
-effort = 0;
+%% mpc
 
-
-% for simulation testing
-fail = 0;
-
-% load grasping profile
-grip_open = 0.01;
-grip_close = 0.2;
-g_size =10;
-g_current = grip_open;
-
-
-ccc = [load('theta_')];
-theta_ = ccc.theta_;
-move_marg = [  0 0.31 0.27 0.23 0.2;
-               0   0   0   0   0;
-               0   0   0   0   0];
-
-th_size = size(theta_{2},2);
+ss=85;
+actual_traj = [];
+mpc_traj = cell(0);
 
 for steps=1:ss
-%% Mode check and switch
-% Check pass obs
-if Tx_current(1) - 0.4 > 1.05
-    pass = 1;
-end
 
+    %% Updates
+% turtlebot sub
+    odom_msg = receive(odom_sub, 10);
+    euler = quat2eul([odom_msg.Pose.Pose.Orientation.W, ...
+        odom_msg.Pose.Pose.Orientation.X, ...
+        odom_msg.Pose.Pose.Orientation.Y, ...
+        odom_msg.Pose.Pose.Orientation.Z]);
+    
+    Tx_current = [  odom_msg.Pose.Pose.Position.X;
+        odom_msg.Pose.Pose.Position.Y;
+        euler(3);
+        odom_msg.Twist.Twist.Linear.X;
+        odom_msg.Twist.Twist.Angular.Z];
+    actual_traj = [actual_traj, Tx_current];
+    
+% arm sub
+    joint_msg = receive(joint_sub, 10);
+    Ax_current = [euler(3); joint_msg.Position(3:end)];
+    
 % Loop reference
 [xref_t,xref,xR,refpath]=generate_reference_loop_pick(var,Ax_current,Tx_current,zAT,horizon,nstate,u0,mode,target,t_marg );
-
-
-%% Arm Cost function and Constraints
-% if steps == 11||steps == 12
-%     yd=yd+0;
-% end
-%     obs{1}.poly = [1.1+xd 1.3+xd 1.4+xd 0.9+xd;0.1+yd 0.1+yd -0.5+yd -0.5+yd];  
-
-    %% check grasping
     
 
-%norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))
-if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05 || mode ==2
+%% Mode check and switch
+% Check pass obs    
+    if Tx_current(1) - 0.4 > 1.05
+        pass = 1;
+    end
+    
+    if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05 
     %%% Platform stop%%
     
-    if mode == 1   % Ready to grasp and lift
+    if mode == 1    % Ready to grasp and lift
         %%%%% Subscribe gripper angle%%%
         g_current = grip_open;  %%%%%%%%%%%%%%%%
         grip_ang = [linspace(g_current,grip_close,g_size)]';
-        ii = 1;
+        
         
         %%%%% Subscribe motor torque/velocity%%%
         v_grip = 0.2; %%%%
         
+        % fine approach
+        if idx ==1
+            rate = 3/2;
+        else
+            rate = 1;
+        end
+        xref_approach = linspace(theta_implement(3,end),zAT(3)*rate,g_size);
+        
+        for ii =1:g_size
+            theta_implement = [theta_implement [theta_implement(1:2,end); xref_approach(ii); theta_implement(4:6,end)]];
+            MODE = [MODE mode];
+            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
+            end_implement = [end_implement  end_effector];
+            traj_implement = [traj_implement X_out(11:12)'];
+            pla_implement = [pla_implement [0 0 0]'];
+            Dt = [Dt dt*0.2];
+        end  
+        
         % close gripper
+        ii = 1;
         while v_grip > 0.1 && ii<g_size+1
             grip_pub = grip_ang(ii);
             ii = ii+1;
-            pause(0.1);
             theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
             MODE = [MODE mode];
             end_effector = ee_plot(theta_implement, X_out(6:7),DH);
             end_implement = [end_implement  end_effector];
             traj_implement = [traj_implement X_out(11:12)'];
             pla_implement = [pla_implement [0 0 0]'];
+            Dt = [Dt dt*0.2];
         end        
         grasp = 1;
         g_current = grip_pub; %%%%%%%%%%%%%%%%
     
-        xref_lift = theta_{1};
+        xref_lift = theta_{idx};
                      
 
         for j = 1:th_size  % lifting the box
-            pub = xref_lift(:,j);
-             
+            pub = xref_lift(:,j);             
             theta_implement = [theta_implement [Ax_current(1:2); xref_lift(:,j); g_current]];
             MODE = [MODE mode];
             end_effector = ee_plot(theta_implement, X_out(6:7),DH);
             end_implement = [end_implement  end_effector];
             traj_implement = [traj_implement X_out(11:12)'];
             pla_implement = [pla_implement [0 0 0]'];
+            Dt = [Dt dt*0.2];
 
             %%%% Get effort %%%%%
-            if j >2 && mode ==3
-                disp('fail')
-                effort = randi(5);                
-            end
+%             if j >2 && mode ==3
+%                 disp('fail')
+%                 effort = randi(5);                
+%             end
              
 
-             if  effort > 1 %sensor>threshold
+             if  effort > 1 && j>3%sensor>threshold
                  % FAIL: Play back and Open griper
                  mode = 2;  % need to restart
                  % lower gripper
@@ -155,6 +175,7 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05 || mode ==2
                      end_implement = [end_implement  end_effector];
                      pla_implement = [pla_implement [ 0 0 0]'];
                      MODE = [MODE mode];
+                     Dt = [Dt dt*0.2];
                  end
                 
                  % open gripper
@@ -162,13 +183,13 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05 || mode ==2
                  while ii>0
                      grip_pub = grip_ang(ii);
                      ii = ii-1;
-                     pause(0.1);
                      theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
                      MODE = [MODE mode];
                      end_effector = ee_plot(theta_implement, X_out(6:7),DH);
                      end_implement = [end_implement  end_effector];
                      traj_implement = [traj_implement X_out(11:12)'];
                      pla_implement = [pla_implement [0 0 0]'];
+                     Dt = [Dt dt*0.2];
                  end        
                  grasp = 0;
                  g_current = grip_pub; %%%%%%%%%%%%%%%%
@@ -178,32 +199,42 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05 || mode ==2
              %%%%%%% lazy mode 2%%%%%%%%%%%%%%%%%%%%%%
              [Min, idx]=min(abs([1 2 3 4 5 ] - effort*ones(1,5)));
              xref_lift = theta_{idx};
-             % Move forward
-             while  Tx_current(1) - (target(1)+move_marg(1,idx))>0%norm([Tx_current(1:2);0.05]-(target+move_marg(:,idx)))>0.05
-                     X_out(6) =  X_out(6) - 0.1*dt;
-                     Tx_current(1) = X_out(6);
-                     theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
-                     MODE = [MODE mode];
-                     mode
-                     end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-                     end_implement = [end_implement  end_effector];
-                     traj_implement = [traj_implement Tx_current(1:2)];
-                     pla_implement = [pla_implement [0 -0.1 0]'];
-             end        
+             t_marg(:,mode) = move_marg(:,idx);
+             zAT = [0 ;-pi;theta_{idx}(:,1)];
+             target = [-0.2; 0; 0.05];
+             xV = -0.15;                
              grasp = 0;
-             Tx_current =  X_out(6:10)';
+             %Tx_current =  X_out(6:10)';
              Ax_current =  theta_implement(:,end);
              effort = 0;
-             
              %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                 %break
+                 break
              end
              mode = 3;  % Ready to move the object
+             %MODE = [MODE mode];
              target = [1.5; 0; 0.05];
              xV = 0.15;
              zAT(2) = -pi/2; 
          end
-         
+    elseif mode == 2  % Second try
+        % reach
+        xref_reach = [linspace(Ax_current(3),zAT(3),10);
+                      linspace(Ax_current(4),zAT(4),10);
+                      linspace(Ax_current(5),zAT(5),10)];
+                  
+        for j = 1:10           
+            pub = xref_reach(:,j);
+            theta_implement = [theta_implement [Ax_current(1:2); xref_reach(:,j); theta_implement(6,end)]];
+            traj_implement = [traj_implement X_out(11:12)'];
+            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
+            end_implement = [end_implement  end_effector];
+            pla_implement = [pla_implement [0 0 0]'];
+            MODE = [MODE mode];
+            Dt = [Dt dt*0.2];
+        end
+        mode = 1;        
+        t_marg(:,mode) = move_marg(:,idx);
+        
     elseif mode == 3  % Ready to put down
         ii=g_size;
         
@@ -218,8 +249,10 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05 || mode ==2
             end_implement = [end_implement  end_effector];
             traj_implement = [traj_implement X_out(11:12)'];
             pla_implement = [pla_implement [0 0 0]'];
+            Dt = [Dt dt*0.2];
         end        
         grasp = 0;
+        g_current = grip_pub;
         
         
         % restore 
@@ -231,6 +264,7 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05 || mode ==2
             end_implement = [end_implement  end_effector];
             pla_implement = [pla_implement [0 0 0]'];
             MODE = [MODE mode];
+            Dt = [Dt dt*0.2];
         end
         mode = 4;  % Ready for new task
         zAT = [0;-pi/2;0;0;0];
@@ -243,20 +277,23 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05 || mode ==2
         
     end
     
-Ax_current = theta_implement(:,end); 
+Ax_current = theta_implement(:,end);
+%Tx_current =  X_out(6:10)';
 
 
-    %% Motion planning
-else  
     
-    % Cost Fn Parameters
+    else
+    
+    
+    %% Arm Cost function and Constraints
+     % Cost Fn Parameters
     Aaug=[];Baug=zeros(horizon*nstate,horizon*nu);Qaug=zeros(horizon*nstate);
     Q_arm=[];
     Q_arm(1:njoint,1:njoint)=[1 0 0 0 0;
         0 10 0 0 0;
         0 0 5 0 0;
-        0 0 0 2 0;
-        0 0 0 0 2];
+        0 0 0 5 0;
+        0 0 0 0 5];
     Q_arm(1:njoint,njoint+1:2*njoint)=0.1*eye(njoint);
     Q_arm(njoint+1:2*njoint,1:njoint)=0.1*eye(njoint);
     Q_arm(njoint+1:2*njoint,njoint+1:2*njoint)=[1 0 0 0 0;
@@ -314,7 +351,6 @@ else
     Q3 = Adiff(1:(nstep-2)*dim,:)'*Adiff(1:(nstep-2)*dim,:);   
 %% Cost function update
     dir = [zT(1)-(-6) zT(2)-0];
-    %dir = [zT(1)-Tx_current(1) zT(2)-Tx_current(2)];
     dir_T = (1/norm(dir))*[ zT(2)-0 -zT(1)+(-6)];
     dd = kron(ones(nstep,1),dir_T*[-6;0]);
     D = kron(eye(nstep),dir_T);
@@ -335,7 +371,7 @@ Qcurv = 5*Mcurv;%+Vcurv(1:nstep-1,:)'*Vcurv(1:nstep-1,:)+Acurv(1:(nstep-2),:)'*A
 %% The boundary constraint
 AT = zeros(1*dim,nstep*dim);
 AT(0*dim+1:1*dim,1:dim) = eye(dim);      
-bT = [refpath(1:2)];
+bT = [path(:,1)];
 
 %% The Iteration
 oripath = refpath;
@@ -351,15 +387,14 @@ poly_now(:,:,1)=obs{1}.poly;
 %% For initialization on w 
 Aeq = zeros(1*dim,nstep*dim+nobj*nstep+(nstep-1)*2);
 Aeq(0*dim+1:1*dim,1:dim) = eye(dim);      
-beq = [refpath(1:2)]; 
+beq = [path(:,1)]; 
 
 
 
  for k = 1:25
     FEAS = 1;
     %% The constraint
-    Lstack = []; Sstack = []; 
-    
+    Lstack = []; Sstack = []; margin = 0.2;
     % Soft speed constraints
     Lstack = [-Vdiff(1:end-2,:) zeros(2*(nstep-1),nstep) -eye((nstep-1)*2)];
     Sstack = ones(2*(nstep-1),1)*xV*dt;
@@ -378,10 +413,6 @@ beq = [refpath(1:2)];
         for j=1:1
             poly = poly_now(:,:,1)+obs{j}.v*ones(1,4)*dt*i;
             [L,S,d] = d2poly(refpath((i-1)*dim+1:i*dim)',poly');
-            
-            % Constraint
-%             Lstack = [Lstack;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim) ];
-%             Sstack = [Sstack;S-margin]; 
 
             % Soft constraint
             Lstack = [Lstack;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim)  zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j+(nstep-1)*2)];
@@ -408,8 +439,7 @@ beq = [refpath(1:2)];
     refpath=pathnew;
     
  end
- 
- 
+
 
 %% LQR tracking
     traj=zeros(2,NILQR);
@@ -422,7 +452,7 @@ beq = [refpath(1:2)];
     
     L1 = zeros(7,NILQR);
     
-    L2 = diag([100 100 0 0 0 1000 10 ]);
+    L2 = diag([100 100 0 0 0 1 1 ]);
     L2=reshape(repmat(L2,1,NILQR),7,7,NILQR);
     l=zeros(1,NILQR);
     u0 = zeros(2,NILQR-1);
@@ -431,7 +461,6 @@ beq = [refpath(1:2)];
     [ x_out, u, xbar, ubar, k, K, sigsu, A, B ] = MaxEntILQR( L2, L1, l, Tx_current, u0, var, xref_ );      
     
     uref_ = x_out(3:5:end); %%%%%%%%%%%%%%%%%%
-    
     
     
 
@@ -448,15 +477,11 @@ for k = 1:10
         for j=1:nobj
             poly = obs{j}.poly+obs{j}.v*ones(1,4)*dt*i;
             [L,S,d] = d2poly(refpath((i-1)*dim+1:i*dim)',poly');
-            % Constraints
-            %LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim) zeros(1,nstep)];
-            
             % Soft constraint
             LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim)  zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,horizon)];
             ST = [ST;S-margin];            
             LT= [LT;zeros(1,nstep*2) zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,horizon)];
             ST = [ST;0];
-            
         end
         
     end
@@ -516,21 +541,10 @@ for k = 1:10
     AA = [AA zeros(size(AA,1),nobj*nstep+horizon)];
     BA = [bT;];
     
-    % Inequality constraints for th1 angle
     LTpA = [LTpA; [AAxy  [zeros(1,nu*horizon);-Bw1] zeros(size(AAxy,1),nobj*nstep+horizon) ] ];
     STpA = [STpA;0; -uref_(2:end)' + Aw1*xR(:,1)+0.1];
     LTpA = [LTpA; [AAxy  [zeros(1,nu*horizon);Bw1] zeros(size(AAxy,1),nobj*nstep+horizon) ] ];
     STpA = [STpA;0; uref_(2:end)' - Aw1*xR(:,1)+0.1];
-    
-    % continuity cinstraints
-%     Ac1 = Aaug(1:5,:);
-%     Bc1 = Baug(1:5,:);
-%     LTpA = [LTpA; [zeros(nstate/2,nstep*2)  -Bc1 zeros(nstate/2,nobj*nstep+horizon) ] ];
-%     STpA = [STpA; -xR(1:5,1) + Ac1*xR(:,1)+0.2];
-%     LTpA = [LTpA; [zeros(nstate/2,nstep*2)  -Bc1 zeros(nstate/2,nobj*nstep+horizon) ]  ];
-%     STpA = [STpA; xR(1:5,1) - Ac1*xR(:,1)+0.2];
-    
-    
 %% QP
     options =  optimoptions('quadprog','Display','off');
     soln = quadprog(Q,f,LTpA,STpA,AA,BA,[],[],[],options);
@@ -580,122 +594,88 @@ for k = 1:10
     %uref = [uref(2:end); uref(end)];
 end
 toc
-%%
 
-   
-       
-
-    traj=zeros(2,NILQR);
-    traj(1,:) = pathnew(1:dim:dim*NILQR)';
-    traj(2,:) = pathnew(2:dim:dim*NILQR)';
-    ILQRtraj = traj(:,1:NILQR);
-    xref_=[ILQRtraj; xref_t'; zeros(2,NILQR)];
+    poseArray = [];
+    for i = 1:nstep
+        poses = rosmessage('geometry_msgs/PoseStamped');
+        poses.Pose.Position.X = x_out(i);
+        poses.Pose.Position.Y = y_out(i);
+        poseArray = [poseArray, poses];
+    end
+    odom_path_msg.Poses = poseArray;
+    send(odom_path_pub, odom_path_msg);
+    
+    x_out_ed = x_out(end)
+    y_out_ed = y_out(end)
     
     
-    L1 = zeros(7,NILQR);
     
-    L2 = diag([100 100 0 0 0 1000 10 ]);
-    L2=reshape(repmat(L2,1,NILQR),7,7,NILQR);
-    l=zeros(1,NILQR);
-    %u0 = zeros(2,NILQR-1);
-
-
-    [ X_out, u, xbar, ubar, kk, K, sigsu, A, B ] = MaxEntILQR( L2, L1, l, Tx_current, u0, var, xref_ );
-%     Tx_current
-%     xref_
-%     X_out(4:5:end)
-    %pause
-%% Plot
-
-end_effector = [];
-T = [0   0 -0.15    0   0.03 0.13;
-     0   0   0      0  -0.12   0 ;
-     0   0   0.0    0     0    0];
-for j = 1:nstep
-     
-    %for i=1:nstate
-    theta=theta_out(:,j);
-    DHn = [zeros(1,4);DH];
+    angles = reshape(states_out, 10, []);
+    joint1_msg.Data = angles(2,:);
+    joint2_msg.Data = angles(3,:);
+    joint3_msg.Data = angles(4,:);
+    joint4_msg.Data = angles(5,:);
     
-    nlink=size(DH,1);
-    pos=cell(1,nlink);
-    M=cell(1,nlink+1); M{1}=eye(4);
-
-    for i=2:nlink+1
-        % R 
-        R=[cos(theta(i-1)) -sin(theta(i-1))  0;
-            sin(theta(i-1)) cos(theta(i-1))  0;
-              0                        0                 1];
-               
-        if i == 4
-            Rx=[1     0             0        ;  
-                0  cos(-0.5*pi) -sin(-0.5*pi); 
-                0  sin(-0.5*pi) cos(-0.5*pi) ];
-                   
-            R = Rx*R;
-        end
-        M{i}=M{i-1}*[R T(:,i); zeros(1,3) 1]; 
-        
-end
+    send(joint1_pub, joint1_msg);
+    send(joint2_pub, joint2_msg);
+    send(joint3_pub, joint3_msg);
+    send(joint4_pub, joint4_msg);
+%         
+    %%%%%%%%%%%%%%%%%%%%%%
+    % Tx_current =  X_out(6:10)';
+    % Ax_current =  states_out(11:15);
+    %
+%     theta_implement = [theta_implement Ax_current];
+%     end_implement = [end_implement  end_effector(:,2)];
+%     traj_implement = [traj_implement X_out(11:12)'];
+%     mpc_traj{end+1} = [x_out'; y_out'];
+%     pla_implement = [pla_implement X_out(13:15)'];
     
-    end_effector(:,j)=M{i}(1:3,1:3)*[0.08;0;0]+M{i}(1:3,4)+[x_out(j);y_out(j);0.1];
-
-end
-end_out = end_effector(:,2);
-%%
-
-
-%figure(fighandle(1));
-%%%%%%%%%%%%%%%%%%%%%%
-
-
-
     
-% if steps == 3||steps == 8||steps == 13 ||steps == 18||steps == 23||steps == 28||steps == 33||steps == 38
-% end_ = plot3(end_effector(1,:),end_effector(2,:),end_effector(3,:),'-*','color',[1-(steps/ss),1-(steps/ss),1-(steps/ss)]);
-% 
-% hold on
-% traLQ_= plot(X_out(1,:),X_out(2,:),'-*','color',[1-(steps/ss),1-(steps/ss),1-(steps/ss)]);
-% 
-% hold on
-% end
- 
-% %%%%%%%%%%%%%%%%
-% %pause(0.05)
-% delete(end_)
-% %delete(traLQ_)
-
-%%%%%%%%%%%%%%%%%%%%%%%%
-%check_grasping
-%%%%%%%%%%%%%%%%%%%%%%%%
-Tx_current =  X_out(6:10)';
-Ax_current =  states_out(11:15);
-
-theta_implement = [theta_implement [Ax_current; g_current]];
-end_implement = [end_implement  end_out];
-traj_implement = [traj_implement X_out(11:12)'];
-pla_implement = [pla_implement X_out(13:15)'];
-MODE = [MODE mode];
-
-end
-
-
+    
+    
+    % end_ = plot3(end_effector(1,:),end_effector(2,:),end_effector(3,:),'*b-')
+    %
+    % hold on
+    % traLQ_ = plot(X_out(1,:),X_out(2,:),'-*','color',[1-(steps/ss),1-(steps/ss),1-(steps/ss)])
+    %
+    % hold on
+    % ob = Polyhedron('V',obs{1}.poly');
+    % ob.plot('color','g');
+    % axis equal
+    % axis([-0.5 2.5 -.6 .5 -0.5 1.2]);
+    % r=0.14;
+    % [X,Y,Z] = cylinder(r);
+    % h=mesh(X+1.18,Y-.1,Z*0.5,'facecolor',[1 0 0]);
+    % %legend('end-effector','platform','obs. (for platform)','obs. (for arm)','location','eastoutside')
+    % view(3);
+    % %subplot(1,2,2);
+    % xlabel('x[m]')
+    % ylabel('y[m]')
+    % zlabel('z[m]')
+    %
+    % %%%%%%%%%%%%%%%%
+    % %pause(0.05)
+    % delete(end_)
+    % %delete(traLQ_)
+    waitfor(r)
 end
 
 %%
-figure(fighandle(1));
-ob = Polyhedron('V',obs{1}.poly');
-Obs = ob.plot('color','g');
+% figure(fighandle(1));
+% ob = Polyhedron('V',obs{1}.poly');
+% ob.plot('color','g');
 hold on
 axis equal
-axis([-0.5 3.5 -.6 .5 -0.5 1.2]);
-r=obs_arm_r;
+axis([-0.5 3.5 -.6 1.5 -0.5 1.2]);
+r=0.14;
 [X,Y,Z] = cylinder(r);
-h=mesh(X+obs_c(1),Y+obs_c(2),Z*0.5,'facecolor',[1 0 0]);
-etrj = plot3(end_implement(1,:),end_implement(2,:),end_implement(3,:),'*r-')
-ptrj = plot(traj_implement(1,:),traj_implement(2,:),'-or');
+h=mesh(X+2.5,Y-.1,Z*0.5,'facecolor',[1 0 0]);
+plot3(end_implement(1,:),end_implement(2,:),end_implement(3,:),'*r-')
+plot(traj_implement(1,:),traj_implement(2,:),'-or');
+plot(actual_traj(1,:), actual_traj(2,:), '.-b');
 
-%legend([etrj ptrj Obs h],'end-effector','platform','obs. (for platform)','obs. (for arm)','location','eastoutside')
+%legend('end-effector','platform','obs. (for platform)','obs. (for arm)','location','eastoutside')
 view(3);
 %subplot(1,2,2);
 xlabel('x[m]')
@@ -704,75 +684,74 @@ zlabel('z[m]')
 %%
 PPL = 0;
 if PPL == 1
-%%
-for j = 1:nstep-1
-    v_out(j) = norm([x_out(j+1)-x_out(j),y_out(j+1)-y_out(j)]);
+    %%
+    for j = 1:nstep-1
+        v_out(j) = norm([x_out(j+1)-x_out(j),y_out(j+1)-y_out(j)]);
+    end
+    % ref.x = x_out;
+    % ref.y = y_out;
+    % ref.v = [v_out v_out(end)];
+    % ref.w = u_out;
+    
+    ref.x = X_out(1,:);
+    ref.y = X_out(2,:);
+    ref.v = X_out(4,:);
+    ref.w = X_out(5,:);
+    
+    
+    ref.theta1 = theta_out(1,:);
+    ref.theta2 = theta_out(2,:);
+    ref.theta3 = theta_out(3,:);
+    ref.theta4 = theta_out(4,:);
+    ref.theta5 = theta_out(5,:);
+    
+    %%
+%     figure
+%     yyaxis left
+%     plot(ref.v,'-bx')
+%     %ylabel('Linear velocity [m/s]')
+%     hold on
+%     yyaxis right
+%     plot(ref.w,'-ro')
+%     %ylabel('Angular velocity [rad/s]')
+%     legend('Vel','AngVel','location','best')
+%     %xlabel('Time step')
+    
+    %%
+%     figure
+%     plot(ref.theta2,'m-d')
+%     hold on
+%     plot(ref.theta3,'--x')
+%     plot(ref.theta4,'-r*')
+%     plot(ref.theta5,'-go')
+%     legend('\theta_1','\theta_2','\theta_3','\theta_4','location','eastoutside')
+%     ylabel('Angle[rad]')
+%     xlabel('Time step')
 end
-% ref.x = x_out;
-% ref.y = y_out;
-% ref.v = [v_out v_out(end)];
-% ref.w = u_out;
 
-ref.x = X_out(1,:);
-ref.y = X_out(2,:);
-ref.v = X_out(4,:);
-ref.w = X_out(5,:);
-
-
-ref.theta1 = theta_out(1,:);
-ref.theta2 = theta_out(2,:);
-ref.theta3 = theta_out(3,:);
-ref.theta4 = theta_out(4,:);
-ref.theta5 = theta_out(5,:);
-
-%%
-figure
-yyaxis left
-plot(ref.v,'-bx')
-%ylabel('Linear velocity [m/s]')
-hold on
-yyaxis right
-plot(ref.w,'-ro')
-%ylabel('Angular velocity [rad/s]')
-legend('Vel','AngVel','location','best')
-%xlabel('Time step')
-
-%%
-figure
-plot(ref.theta2,'m-d')
-hold on
-plot(ref.theta3,'--x')
-plot(ref.theta4,'-r*')
-plot(ref.theta5,'-go')
-legend('\theta_1','\theta_2','\theta_3','\theta_4','location','eastoutside')
-ylabel('Angle[rad]')
-xlabel('Time step')
-end
-
-%%
-figure
-plot(theta_implement(1,:),'-ko')
-hold on
-plot(theta_implement(2,:),'m-d')
-hold on
-plot(theta_implement(3,:),'--x')
-plot(theta_implement(4,:),'-r*')
-plot(theta_implement(5,:),'-go')
-plot(theta_implement(6,:),'-yo')
-legend('platform angle','\theta_1','\theta_2','\theta_3','\theta_4','Gripper' ,'location','eastoutside')
-ylabel('Angle[rad]')
-xlabel('Time step')
-
-ref.v = pla_implement(2,:);
-ref.w = pla_implement(3,:);
-
-figure
-yyaxis left
-plot(ref.v,'-bx')
-ylabel('Linear velocity [m/s]')
-hold on
-yyaxis right
-plot(ref.w,'-ro')
-ylabel('Angular velocity [rad/s]')
-legend('Vel','AngVel','location','best')
-xlabel('Time step')
+% %%
+% figure
+% plot(theta_implement(1,:),'-ko')
+% hold on
+% plot(theta_implement(2,:),'m-d')
+% 
+% plot(theta_implement(3,:),'--x')
+% plot(theta_implement(4,:),'-r*')
+% plot(theta_implement(5,:),'-go')
+% legend('\theta_1','\theta_2','\theta_3','\theta_4','location','eastoutside')
+% ylabel('Angle[rad]')
+% xlabel('Time step')
+% 
+% ref.v = pla_implement(2,:);
+% ref.w = pla_implement(3,:);
+% 
+% figure
+% yyaxis left
+% plot(ref.v,'-bx')
+% %ylabel('Linear velocity [m/s]')
+% hold on
+% yyaxis right
+% plot(ref.w,'-ro')
+% %ylabel('Angular velocity [rad/s]')
+% legend('Vel','AngVel','location','best')
+% %xlabel('Time step')

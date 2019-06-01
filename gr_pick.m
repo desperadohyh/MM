@@ -9,7 +9,7 @@ z0 = [0;-pi/2;0;0;0];
 Ax_current = [0;-pi/2;0;0;0];
 %zT = [0;-pi/2;0;0;0];
 %zAT = [0 ;-pi; pi/2; -pi*0.2314; -pi*0.2655];
-zAT = [0 ;-pi; pi*0.4386; -pi*0.2498; -pi*0.0277];
+zAT = [0 ;-pi; pi*0.4386*2/3; -pi*0.2498; -pi*0.0277];
 % zT = [-pi/2;-pi/2;0;0;0];
 % zAT = [-pi/2;-pi/2;0;0;0];
 % horizon settings
@@ -57,7 +57,7 @@ path = [linspace(z0(1),zT(1),nstep);
         linspace(z0(2),zT(2),nstep)];
 pathall =[];
 trajectory =[];
-theta_implement =[];
+theta_implement =[Ax_current; 0.015];
 traj_implement = [];
 end_implement = [];
 pla_implement = [];
@@ -83,3 +83,51 @@ var.N = NILQR;
     
 u0 = zeros(2,NILQR-1);
 xref_ = [path; zeros(3,NILQR)];
+
+%% load grasping profile
+grip_open = 0.015;
+grip_close = -0.005;
+g_size =10;
+g_current = grip_open;
+
+
+ccc = [load('theta_')];
+theta_ = ccc.theta_;
+move_marg = [  0 0.31 0.27 0.23 0.2;
+               0   0   0   0   0;
+               0   0   0   0   0];
+
+th_size = size(theta_{2},2);
+
+%% OBS
+obs_c = [1.1;-0.2];
+width = [0.4 0.8]/2;
+hight = 0.6/2;
+% Arm obs
+obs_arm     =[[obs_c;-0.1 ] [obs_c;0.5]];
+obs_arm_r   = 0.2; % radius
+% TB: obstacle
+nobj        = 1;
+obs         = {};
+obs{1}.v    = [0;0];
+margin = 0.2;
+
+xd = 0;
+yd = 0;
+obs{1}.poly = [ obs_c(1)-width(1)+xd obs_c(1)+width(1)+xd obs_c(1)+width(2)+xd obs_c(1)-width(2)+xd;
+                obs_c(2)+hight+yd obs_c(2)+hight+yd obs_c(2)-hight+yd obs_c(2)-hight+yd]; % 4 1 2 3
+            
+%% Target
+target = [-0.2; 0; 0.05];
+t_marg = [0.35 0.2 0.35 0; 0  0  0  0; 0 0 0 0];
+
+ss=85;
+xV = -0.15;
+
+%% Initializa conditions
+pass = 0;
+mode = 1;
+MODE = [];
+effort = 5;
+idx = 1;
+Dt = [];
