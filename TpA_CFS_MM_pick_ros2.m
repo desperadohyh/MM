@@ -7,36 +7,37 @@ rosshutdown
 % set(gcf, 'position', [0 0 500 500]);
 
 
-%% ros
+%% ROS setting
 
 rosinit
-
+% platform
 odom_sub = rossubscriber('/om_with_tb3/odom','nav_msgs/Odometry');
 
 odom_path_pub = rospublisher('path', 'nav_msgs/Path');
 odom_path_msg = rosmessage('nav_msgs/Path');
 odom_path_msg.Header.FrameId = 'odom';
 
+% arm
 joint_sub = rossubscriber('/om_with_tb3/joint_states', 'sensor_msgs/JointState');
+gripper_sub = rossubscriber('/om_with_tb3/gripper_position','std_msgs/Float64MultiArray');
 
-joint1_pub = rospublisher('joint1_waypoints', 'std_msgs/Float64MultiArray');
-joint2_pub = rospublisher('joint2_waypoints', 'std_msgs/Float64MultiArray');
-joint3_pub = rospublisher('joint3_waypoints', 'std_msgs/Float64MultiArray');
-joint4_pub = rospublisher('joint4_waypoints', 'std_msgs/Float64MultiArray');
+joints_pub = rospublisher('/joint_waypoints', 'std_msgs/Float64MultiArray');
+gripper_pub = rospublisher('/om_with_tb3/gripper_position','std_msgs/Float64MultiArray');
 
-joint1_msg = rosmessage('std_msgs/Float64MultiArray');
-joint2_msg = rosmessage('std_msgs/Float64MultiArray');
-joint3_msg = rosmessage('std_msgs/Float64MultiArray');
-joint4_msg = rosmessage('std_msgs/Float64MultiArray');
+joints_msg = rosmessage('std_msgs/Float64MultiArray');
+griper_msg = rosmessage('std_msgs/Float64MultiArray');
 
 r = robotics.Rate(0.5);
 
-%% parameter definition
+% Initialize 
+griper_msg.Data = [0.015];
+send(gripper_pub,griper_msg);
 
 %% parameter definition
 % TB definition
 % sampling time
 dt          = 0.5;
+st          = 0.2;
 
 % TB: trajectory dimension
 dim         = 2; %x,y
@@ -86,6 +87,7 @@ for steps=1:ss
 % arm sub
     joint_msg = receive(joint_sub, 10);
     Ax_current = [euler(3); joint_msg.Position(3:end)];
+    ef_current = joint_msg.Effort(3:7);
     
 % Loop reference
 [xref_t,xref,xR,refpath]=generate_reference_loop_pick(var,Ax_current,Tx_current,zAT,horizon,nstate,u0,mode,target,t_marg );
@@ -103,7 +105,8 @@ for steps=1:ss
     
     if mode == 1    % Ready to grasp and lift
         %%%%% Subscribe gripper angle%%%
-        g_current = grip_open;  %%%%%%%%%%%%%%%%
+        g_current_sub = receive(gripper_sub, 10);  
+        g_current = g_current_sub.Data;
         grip_ang = [linspace(g_current,grip_close,g_size)]';
         
         
@@ -119,109 +122,119 @@ for steps=1:ss
         xref_approach = linspace(theta_implement(3,end),zAT(3)*rate,g_size);
         
         for ii =1:g_size
-            theta_implement = [theta_implement [theta_implement(1:2,end); xref_approach(ii); theta_implement(4:6,end)]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.2];
+            % record data  
+            joint_msg = receive(joint_sub, 10);
+            Ax_current = [euler(3); joint_msg.Position(3:end)];            
+            recorded_data = record(recorded_data, Ax_current, Tx_current, g_current,dt*st);                     
+            % publish new commands
+            joints_msg.Data = [Ax_current(2); Ax_current(2);  xref_approach(ii); Ax_current(4:5)]';    
+            send(joints_pub,joints_msg);
             waitfor(r);
         end  
         
         % close gripper
         ii = 1;
-        while v_grip > 0.1 && ii<g_size+1
-            grip_pub = grip_ang(ii);
-            ii = ii+1;
-            theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.2];
+        while efg_current < 250 && ii<g_size+1
+            % gripper current
+            joint_msg = receive(joint_sub, 10);
+            efg_current = joint_msg.Effort(7);            
+            % record data            
+            Ax_current = [euler(3); joint_msg.Position(3:end)];
+            g_current_sub = receive(gripper_sub, 10);  
+            g_current = g_current_sub.Data;
+            recorded_data = record(recorded_data, Ax_current, Tx_current, g_current,dt*st);            
+            % publish new commands
+            griper_msg.Data = [grip_ang(ii)];
+            send(gripper_pub,griper_msg);
+            ii = ii+1; 
             waitfor(r);
         end        
-        grasp = 1;
-        g_current = grip_pub; %%%%%%%%%%%%%%%%
-    
+        grasp = 1;       
+        
+        % get graspping profile
         xref_lift = theta_{idx};
                      
 
         for j = 1:th_size  % lifting the box
-            pub = xref_lift(:,j);             
-            theta_implement = [theta_implement [Ax_current(1:2); xref_lift(:,j); g_current]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.2];
-            waitfor(r);
+            % record data
+            joint_msg = receive(joint_sub, 10);
+            Ax_current = [euler(3); joint_msg.Position(3:end)];
+            g_current_sub = receive(gripper_sub, 10);  
+            g_current = g_current_sub.Data;
+            recorded_data = record(recorded_data, Ax_current, Tx_current, g_current,dt*st);
+            
+            % publish new commands
+            joints_msg.Data = [Ax_current(2) Ax_current(2) xref_lift(:,j)'];    
+            send(joints_pub,joints_msg);            
+            
 
             %%%% Get effort %%%%%
-%             if j >2 && mode ==3
-%                 disp('fail')
-%                 effort = randi(5);                
-%             end
+            joint_msg = receive(joint_sub, 10);
+            ef_current = sum(abs(joint_msg.Effort(3:6)));
              
 
-             if  effort > 1 && j>3%sensor>threshold
+             if  ef_current > 1000 && %j>3%sensor>threshold
                  % FAIL: Play back and Open griper
                  mode = 2;  % need to restart
-                 % lower gripper
+                 
+                 % lower arm
                  for b = j-1:-1:1
-                     pub = xref_lift(:,b);
-                     theta_implement = [theta_implement [Ax_current(1:2); xref_lift(:,b);g_current]];
-                     traj_implement = [traj_implement X_out(11:12)'];
-                     end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-                     end_implement = [end_implement  end_effector];
-                     pla_implement = [pla_implement [ 0 0 0]'];
-                     MODE = [MODE mode];
-                     Dt = [Dt dt*0.2];
+                     % record data
+                     joint_msg = receive(joint_sub, 10);
+                     Ax_current = [euler(3); joint_msg.Position(3:end)];
+                     g_current_sub = receive(gripper_sub, 10);  
+                     g_current = g_current_sub.Data;
+                     recorded_data = record(recorded_data, Ax_current, Tx_current, g_current,dt*st);
+
+                     % publish new commands
+                     joints_msg.Data = [Ax_current(2) Ax_current(2) xref_lift(:,b)'];    
+                     send(joints_pub,joints_msg);            
                      waitfor(r);
                  end
                 
                  % open gripper
-                 ii=g_size;
+                 %ii=g_size;
                  while ii>0
-                     grip_pub = grip_ang(ii);
-                     ii = ii-1;
-                     theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
-                     MODE = [MODE mode];
-                     end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-                     end_implement = [end_implement  end_effector];
-                     traj_implement = [traj_implement X_out(11:12)'];
-                     pla_implement = [pla_implement [0 0 0]'];
-                     Dt = [Dt dt*0.2];
-                     waitfor(r);
+                     % gripper current
+                     joint_msg = receive(joint_sub, 10);
+                     efg_current = joint_msg.Effort(7);            
+                     % record data            
+                     Ax_current = [euler(3); joint_msg.Position(3:end)];
+                     g_current_sub = receive(gripper_sub, 10);  
+                     g_current = g_current_sub.Data;
+                     recorded_data = record(recorded_data, Ax_current, Tx_current, g_current,dt*st);            
+                     % publish new commands
+                     griper_msg.Data = [grip_ang(ii)];
+                     send(gripper_pub,griper_msg);
+                     ii = ii-1; 
+                     waitfor(r);                     
                  end        
                  grasp = 0;
-                 g_current = grip_pub; %%%%%%%%%%%%%%%%
-   
+                
                  
            
-             %%%%%%% lazy mode 2%%%%%%%%%%%%%%%%%%%%%%
-             [Min, idx]=min(abs([1 2 3 4 5 ] - effort*ones(1,5)));
+             % find suitable profile and set targets
+             [Min, idx]=min(abs(effort_p - effort*ones(1,6)));
+             idx = idx +1; % add margin
              xref_lift = theta_{idx};
              t_marg(:,mode) = move_marg(:,idx);
              zAT = [0 ;-pi;theta_{idx}(:,1)];
              target = [-0.2; 0; 0.05];
              xV = -0.15;                
-             grasp = 0;
-             %Tx_current =  X_out(6:10)';
-             Ax_current =  theta_implement(:,end);
-             effort = 0;
-             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                 break
+             grasp = 0;            
+             
+                 break % mode 2, go to second try
              end
-             mode = 3;  % Ready to move the object
-             %MODE = [MODE mode];
+             
+             % no overloading
+             mode = 3;  % Ready to move the object             
              target = [1.5; 0; 0.05];
              xV = 0.15;
-             zAT(2) = -pi/2; 
-         end
+             zAT(2) = -pi/2;
+             waitfor(r);
+             
+        end   % finish lifting
+        
     elseif mode == 2  % Second try
         % reach
         xref_reach = [linspace(Ax_current(3),zAT(3),10);
@@ -229,17 +242,19 @@ for steps=1:ss
                       linspace(Ax_current(5),zAT(5),10)];
                   
         for j = 1:10           
-            pub = xref_reach(:,j);
-            theta_implement = [theta_implement [Ax_current(1:2); xref_reach(:,j); theta_implement(6,end)]];
-            traj_implement = [traj_implement X_out(11:12)'];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            pla_implement = [pla_implement [0 0 0]'];
-            MODE = [MODE mode];
-            Dt = [Dt dt*0.2];
+            % record data  
+            joint_msg = receive(joint_sub, 10);
+            Ax_current = [euler(3); joint_msg.Position(3:end)];
+            g_current_sub = receive(gripper_sub, 10);  
+            g_current = g_current_sub.Data;
+            recorded_data = record(recorded_data, Ax_current, Tx_current, g_current,dt*st);                     
+            % publish new commands
+            joints_msg.Data = [Ax_current(2); Ax_current(2);  xref_reach(:,j)]';    
+            send(joints_pub,joints_msg);
             waitfor(r);
         end
-        mode = 1;        
+        
+        mode = 1;        % will go to grasp again
         t_marg(:,mode) = move_marg(:,idx);
         
     elseif mode == 3  % Ready to put down
@@ -247,34 +262,38 @@ for steps=1:ss
         
         % open gripper
         while ii>0
-            grip_pub = grip_ang(ii);
-            ii = ii-1;
-            pause(0.1);
-            theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.2];
-            waitfor(r);
+            % gripper current
+             joint_msg = receive(joint_sub, 10);
+             efg_current = joint_msg.Effort(7);            
+             % record data            
+             Ax_current = [euler(3); joint_msg.Position(3:end)];
+             g_current_sub = receive(gripper_sub, 10);  
+             g_current = g_current_sub.Data;
+             recorded_data = record(recorded_data, Ax_current, Tx_current, g_current,dt*st);            
+             % publish new commands
+             griper_msg.Data = [grip_ang(ii)];
+             send(gripper_pub,griper_msg);
+             ii = ii-1; 
+             waitfor(r);
         end        
-        grasp = 0;
-        g_current = grip_pub;
+        grasp = 0;    
         
         
         % restore 
-        for j = 1:th_size            
-            pub = xref_lift(:,j);
-            theta_implement = [theta_implement [Ax_current(1:2); xref_lift(:,j); theta_implement(6,end)]];
-            traj_implement = [traj_implement X_out(11:12)'];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            pla_implement = [pla_implement [0 0 0]'];
-            MODE = [MODE mode];
-            Dt = [Dt dt*0.2];
+        for j = 1:th_size
+            % record data
+            joint_msg = receive(joint_sub, 10);
+            Ax_current = [euler(3); joint_msg.Position(3:end)];
+            g_current_sub = receive(gripper_sub, 10);  
+            g_current = g_current_sub.Data;
+            recorded_data = record(recorded_data, Ax_current, Tx_current, g_current,dt*st);
+            
+            % publish new commands
+            joints_msg.Data = [Ax_current(2) Ax_current(2) xref_lift(:,j)'];    
+            send(joints_pub,joints_msg);            
             waitfor(r);
         end
+        
         mode = 4;  % Ready for new task
         zAT = [0;-pi/2;0;0;0];
         target = [2.5; 0; 0.05];
@@ -286,12 +305,12 @@ for steps=1:ss
         
     end
     
-Ax_current = theta_implement(:,end);
-%Tx_current =  X_out(6:10)';
-
 
 %% Motion planning    
-    else  
+    else
+        g_current_sub = receive(gripper_sub, 10);  
+        g_current = g_current_sub.Data;
+        recorded_data = record(recorded_data, Ax_current, Tx_current, g_current,dt);
         r = robotics.Rate(0.5);
     
     
@@ -558,6 +577,7 @@ for k = 1:10
 %% QP
     options =  optimoptions('quadprog','Display','off');
     soln = quadprog(Q,f,LTpA,STpA,AA,BA,[],[],[],options);
+%% Update
     % TB path update 
     pathnew = soln(1:dim*nstep);
     refinput = soln(dim*nstep+1:(dim+1)*nstep);
@@ -579,11 +599,8 @@ for k = 1:10
     unew = soln((dim)*nstep+1:end-(nobj*nstep+horizon));
     
     oldref=xref;
-    xref=[];
-    for i=2:horizon+1
-        xR(:,i)=robot.A([1:njoint,6:5+njoint],[1:njoint,6:5+njoint])*xR(:,i-1)+robot.B([1:njoint,6:5+njoint],1:nu)*unew((i-2)*nu+1:(i-1)*nu);
-        xref=[xref;xR(:,i)];
-    end
+    
+    xref=states_out;
     uref=unew;
     
     
@@ -613,23 +630,13 @@ toc
         poseArray = [poseArray, poses];
     end
     odom_path_msg.Poses = poseArray;
-    send(odom_path_pub, odom_path_msg);
-    
-    x_out_ed = x_out(end)
-    y_out_ed = y_out(end)
+    send(odom_path_pub, odom_path_msg);    
     
     
+    joints_msg.Data = [theta_out(2,2), theta_out(2:5,2)'];    
+    send(joints_pub,joints_msg);
     
-    angles = reshape(states_out, 10, []);
-    joint1_msg.Data = angles(2,:);
-    joint2_msg.Data = angles(3,:);
-    joint3_msg.Data = angles(4,:);
-    joint4_msg.Data = angles(5,:);
     
-    send(joint1_pub, joint1_msg);
-    send(joint2_pub, joint2_msg);
-    send(joint3_pub, joint3_msg);
-    send(joint4_pub, joint4_msg);
 %         
     %%%%%%%%%%%%%%%%%%%%%%
     % Tx_current =  X_out(6:10)';

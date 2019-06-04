@@ -2,9 +2,9 @@
 %clear all
 
 %%
-load('simulation_data.mat')
+load('simulation_data2_ggrasp.mat')
 rosshutdown
-rosinit('http://10.42.0.137:11311')
+rosinit('http://10.42.0.1:11311')
 sub = rossubscriber('/odom','nav_msgs/Odometry');
 subj = rossubscriber('/om_with_tb3/joint_states','sensor_msgs/JointState'); 
 subg = rossubscriber('/om_with_tb3/gripper_position','std_msgs/Float64MultiArray'); 
@@ -63,7 +63,8 @@ end
 
 % Split data
 %%
-split = [1 35 62 63 113 142 182 198];
+%split = [1 35 62 63 113 142 182 198];
+split = [1 35 72 74 134 154 204]
 for s = 1:size(split,2)-1
     theta_implement_{s} = theta_implement(:,split(s):split(s+1)-1);
     Dt_{s} = Dt(split(s):split(s+1)-1);

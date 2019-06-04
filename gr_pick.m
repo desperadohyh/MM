@@ -90,14 +90,16 @@ grip_close = -0.005;
 g_size =10;
 g_current = grip_open;
 
-
+% low weight(long stretch) to large weight(short stretch)
 ccc = [load('theta_')];
 theta_ = ccc.theta_;
-move_marg = [  0 0.31 0.27 0.23 0.2;
-               0   0   0   0   0;
-               0   0   0   0   0];
+theta_{6} = theta_{5};
+move_marg = [  0 0.31 0.27 0.23 0.2 0.2;
+               0   0   0   0   0   0;
+               0   0   0   0   0   0];
 
 th_size = size(theta_{2},2);
+effort_p = [ 400 500 600 700 900 900]; %%%%%%%%%%
 
 %% OBS
 obs_c = [1.1;-0.2];
