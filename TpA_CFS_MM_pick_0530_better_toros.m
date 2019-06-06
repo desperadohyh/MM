@@ -28,10 +28,12 @@ DH          =robot.DH;
 
 %%
 % Target
-target = [-0.2; 0; 0.05];
+%target = [-0.2; 0; 0.05];
+target = [1; 0; 0.05];
 t_marg = [0.35 0.2 0.35 0; 0  0  0  0; 0 0 0 0];
 
-ss=85;
+%ss=85;
+ss=45;
 xV = -0.15;
 
 for steps=1:ss
@@ -81,6 +83,17 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
             traj_implement = [traj_implement X_out(11:12)'];
             pla_implement = [pla_implement [0 0 0]'];
             Dt = [Dt dt*0.2];
+        end  
+        
+        %% wait
+        for ii =1:g_size
+            theta_implement = [theta_implement [theta_implement(1:2,end); xref_approach(g_size); theta_implement(4:6,end)]];
+            MODE = [MODE mode];
+            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
+            end_implement = [end_implement  end_effector];
+            traj_implement = [traj_implement X_out(11:12)'];
+            pla_implement = [pla_implement [0 0 0]'];
+            Dt = [Dt dt*0.4];
         end  
         
         % close gripper
@@ -157,7 +170,7 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
              xref_lift = theta_{idx};
              t_marg(:,mode) = move_marg(:,idx);
              zAT = [0 ;-pi;theta_{idx}(:,1)];
-             target = [-0.2; 0; 0.05];
+             target = [1; 0; 0.05];
              xV = -0.15;                
              grasp = 0;
              %Tx_current =  X_out(6:10)';
@@ -188,6 +201,8 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
             MODE = [MODE mode];
             Dt = [Dt dt*0.2];
         end
+        
+        
         mode = 1;        
         t_marg(:,mode) = move_marg(:,idx);
         
@@ -773,3 +788,16 @@ xlabel('Time step')
 
 %%
 theta_implement = theta_implement(2:6,:);
+%%
+split = [];
+
+for sp = 2:size(Dt,2)
+    c=Dt(sp)-Dt(sp-1);
+    if c~=0
+        split = [split sp];
+    end
+end
+split = [1 split size(Dt,2)+1]
+ref.Dt = Dt;
+ref.theta_implement = theta_implement;
+ref.split = split;

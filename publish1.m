@@ -1,8 +1,12 @@
 %%
-%clear all
+clear all
+close all
 
 %%
-load('simulation_data2_ggrasp.mat')
+load('good_data6.mat')
+split = ref.split;
+Dt = ref.Dt;
+theta_implement = ref.theta_implement;
 rosshutdown
 rosinit('http://10.42.0.1:11311')
 sub = rossubscriber('/odom','nav_msgs/Odometry');
@@ -64,7 +68,7 @@ end
 % Split data
 %%
 %split = [1 35 62 63 113 142 182 198];
-split = [1 35 72 74 134 154 204]
+%split = [1 35 72 74 84 144 174 214 228];
 for s = 1:size(split,2)-1
     theta_implement_{s} = theta_implement(:,split(s):split(s+1)-1);
     Dt_{s} = Dt(split(s):split(s+1)-1);
@@ -85,6 +89,8 @@ a=1;
 for s = 1:size(Dt_,2)
     r = robotics.Rate(1/Dt_{s}(1));
     ss = size(theta_implement_{s},2);
+    %pause
+    
     
     for nstep = 1:ss
         tic
@@ -125,14 +131,14 @@ end
 
 %%
 figure(1)
-x = 1:size(theta_implement,2);
+x = 1:size(theta_implement,2)-1;
 plot(x,value(1,:),'-b',x,value(2,:),'-r',x,value(3,:),'-g',x,value(4,:),'-c')
 hold on
 title('Comparsion of joint angles')
 xlabel('Number of nsteps')
 ylabel('Angle(Radian?)')
 legend('joint1','joint2','joint3','joint4')
-plot(x,theta_implement(2,:),'--b',x,theta_implement(3,:),'--r',x,theta_implement(4,:),'--g',x,theta_implement(5,:),'--c')
+plot(x,theta_implement(1,1:end-1),'--b',x,theta_implement(2,1:end-1),'--r',x,theta_implement(3,1:end-1),'--g',x,theta_implement(4,1:end-1),'--c')
 hold off
 %legend('desired1','desired2','desired3','desired4')
 
@@ -143,7 +149,7 @@ hold off
 % xlabel('Number of nsteps')
 % ylabel('Angle(Radian?)')
 % legend('joint1','joint2','joint3')     %2,3,4 --> 1,2,3
-
+%%
 cmv.Linear.X = 0;
 cmv.Angular.Z = 0;
 send(pub,cmv);

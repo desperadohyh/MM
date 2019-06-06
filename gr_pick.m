@@ -102,9 +102,13 @@ th_size = size(theta_{2},2);
 effort_p = [ 400 500 600 700 900 900]; %%%%%%%%%%
 
 %% OBS
-obs_c = [1.1;-0.2];
+%obs_c = [1.1;-0.2];
+%width = [0.4 0.8]/2;
+%hight = 0.6/2;
+obs_c = [4.1;-0.2];
 width = [0.4 0.8]/2;
 hight = 0.6/2;
+
 % Arm obs
 obs_arm     =[[obs_c;-0.1 ] [obs_c;0.5]];
 obs_arm_r   = 0.2; % radius
@@ -130,6 +134,6 @@ xV = -0.15;
 pass = 0;
 mode = 1;
 MODE = [];
-effort = 5;
+effort = 3;
 idx = 1;
 Dt = [];
