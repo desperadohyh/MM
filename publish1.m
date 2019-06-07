@@ -1,9 +1,10 @@
 %%
-clear all
-close all
+%clear all
+%close all
 
 %%
-load('good_data6.mat')
+load('good_data9.mat')
+%%
 split = ref.split;
 Dt = ref.Dt;
 theta_implement = ref.theta_implement;
