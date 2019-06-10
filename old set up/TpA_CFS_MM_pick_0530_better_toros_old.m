@@ -474,8 +474,8 @@ for k = 1:10
         Diff = num_jac(ff,theta); Diff = Diff';
         
         Bj=Baug((i-1)*nstate+1:i*nstate,1:horizon*nu);
-        s=I(i)-Diff'*Bj(1:njoint,:)*uref;
-        l=-Diff'*Bj(1:njoint,:);
+        s=I(i)+Diff'*Bj(1:njoint,:)*uref;
+        l=Diff'*Bj(1:njoint,:);
         LLA = [LLA;l];
         SSA = [SSA;s];
         % Soft constraint

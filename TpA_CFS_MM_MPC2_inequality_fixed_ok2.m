@@ -39,7 +39,7 @@ DH          =robot.DH;
 obs_arm     =[[1.05;-0.2;0.35] [1.05;-0.2;0.5]];
 obs_arm_r   = 0.35; % radius
 
-ss=5;
+ss=25;
 X_out(1) = 0;
 cc = 1;
 xV = 0.2
@@ -299,8 +299,8 @@ for k = 1:10
         Diff = num_jac(ff,theta); Diff = Diff';
         
         Bj=Baug((i-1)*nstate+1:i*nstate,1:horizon*nu);
-        s=I(i)-Diff'*Bj(1:njoint,:)*uref;
-        l=-Diff'*Bj(1:njoint,:);
+        s=I(i)+Diff'*Bj(1:njoint,:)*uref;
+        l=Diff'*Bj(1:njoint,:);
         LLA = [LLA;l];
         SSA = [SSA;s];
         LA=[LA; [zeros(1,nstep*2) l zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i)]];
