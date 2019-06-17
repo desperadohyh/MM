@@ -15,7 +15,7 @@ dt          = 0.5;
 % TB: trajectory dimension
 dim         = 2; %x,y
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-gr_hold
+gr_push_hold
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Arm parameters
 robot=robotproperty_hc(4);
@@ -26,18 +26,14 @@ nu          =5; % acceleration dim
 DH          =robot.DH;
 
 
-%% Target
-%target = [-0.2; 0; 0.05];
-target = [0.5; 0; 0.05];
+%%
+% Target
+target = [-0.2; 0; 0.05];
 t_marg = [0.35 0.2 0.35 0; 0  0  0  0; 0 0 0 0];
 
-
-ss=10;
+ss=25;
 xV = -0.15;
-
-
-%% for checking
-HOLD =[];
+Vx = xV;
 
 for steps=1:ss
 %% Mode check and switch
@@ -47,13 +43,20 @@ if Tx_current(1) - 0.4 > 1.05
 end
 
 % Loop reference
-[xref_t,xref,xR,refpath]=gr_hold_loop(var,Ax_current,Tx_current,zAT,horizon,nstate,u0,zT );
+[xref_t,xref,xR,refpath]=generate_reference_loop_hold(var,Ax_current,Tx_current,zAT,zT,horizon,nstate,u0,mode_,target,t_marg );
 
 
+%% Arm Cost function and Constraints
+% if steps == 11||steps == 12
+%     yd=yd+0;
+% end
+%     obs{1}.poly = [1.1+xd 1.3+xd 1.4+xd 0.9+xd;0.1+yd 0.1+yd -0.5+yd -0.5+yd];  
 
+    %% check grasping
+  
 
     %% Motion planning
- 
+
     
     % Cost Fn Parameters
     Aaug=[];Baug=zeros(horizon*nstate,horizon*nu);Qaug=zeros(horizon*nstate);
@@ -101,23 +104,26 @@ end
    
 
 %% The cost function
-    % The weight
-    c = [50,0,20];
+   % The weight
+    c = [100,10,20];
     % The distance metric between the original path and the new path
     Q1 = eye(nstep*dim);
+    x_goal = kron(ones(1, nstep),zT')';
+    %Q1((nstep-1)*dim+1:end,(nstep-1)*dim+1:end) =  eye(dim)*1000;
+    %Q1(1:dim,1:dim) =  eye(dim)*1000;
     % The velocity
     Vdiff = eye(nstep*dim)-diag(ones(1,(nstep-1)*dim),dim);
     Vconst = [-eye(2) eye(2) zeros(2,(nstep-2)*2);[[zeros((nstep-1)*2,2) eye((nstep-1)*2) ]-[eye((nstep-1)*2) zeros((nstep-1)*2,2)]]];
-    V_ratio = [5 0;0 0];
+    V_ratio = [5 0;0 1];
     Rpenalty = kron(eye(nstep),V_ratio);
     Q2 = Vconst'*Rpenalty'*Rpenalty*Vconst;
-    Q2 = Vdiff(1:(nstep-1)*dim,:)'*Q1(1+dim:end,1+dim:end)*Vdiff(1:(nstep-1)*dim,:);
-    Vref = [xV,0]*dt;    
+    %Q2 = Vdiff(1:(nstep-1)*dim,:)'*Q1(1+dim:end,1+dim:end)*Vdiff(1:(nstep-1)*dim,:);
+    Vref = [Vx,0]*dt;    
     Vref_1 = c(2)*kron(ones(1, nstep),Vref)*Rpenalty'*Rpenalty*Vconst;
     % The accelaration
     Vdiff = eye(nstep*dim)-diag(ones(1,(nstep-1)*dim),dim);
     Adiff = Vdiff-diag(ones(1,(nstep-1)*dim),dim)+diag(ones(1,(nstep-2)*dim),dim*2);
-    Q3 = Adiff(1:(nstep-2)*dim,:)'*Adiff(1:(nstep-2)*dim,:);   
+    Q3 = Adiff(1:(nstep-2)*dim,:)'*Adiff(1:(nstep-2)*dim,:);    
 %% Cost function update
 %     dir = [zT(1)-(-6) zT(2)-0];
 %     %dir = [zT(1)-Tx_current(1) zT(2)-Tx_current(2)];
@@ -125,10 +131,8 @@ end
 %     dd = kron(ones(nstep,1),dir_T*[-6;0]);
 %     D = kron(eye(nstep),dir_T);
 %     % Distance to reference line
-%    Q1 = D'*D;
-%    Xdis_1 = 2*c(1)*dd'*D;
-    
-    Xdis_1 = 2*refpath'*Q1';
+%     Q1 = D'*D;
+    Xdis_1 = c(1)*x_goal'* Q1';
     % The total costj
     Qref = 1*(Q1*c(1)+Q2*c(2)+Q3*c(3));
     Qabs = 0*Q3*c(3);
@@ -151,7 +155,7 @@ refinput = ones(1,nstep);
 
 % TB linear term
 %fT = [-Qref*oripath;];
-fT = [-[Xdis_1']];
+fT = [-[Xdis_1']-[Vref_1']];
 % TB Quadratic term
 QT = Qref+Qabs;
 poly_now(:,:,1)=obs{1}.poly;
@@ -162,7 +166,7 @@ Aeq(0*dim+1:1*dim,1:dim) = eye(dim);
 beq = [refpath(1:2)]; 
 
 
-refpath
+
  for k = 1:25
     FEAS = 1;
     %% The constraint
@@ -216,7 +220,7 @@ refpath
     refpath=pathnew;
     
  end
- pathnew
+ 
  
 
 %% LQR tracking
@@ -242,8 +246,7 @@ refpath
     
     
     
-x_out
-%pause
+
  
 
 %% Iterative Quadratic Program solve 
@@ -273,12 +276,10 @@ for k = 1:10
 % Arm
 
     D=obs_arm_r;
-    h_D = 0.01; 
     LA=[];SA=[];
     LLA=[];
     SSA=[];
     I=[];
-    ee_I = [];
     rec_d = [];
     for i=1:horizon
         % provide mode_ according to current 2D path 
@@ -383,7 +384,7 @@ for k = 1:10
     % Arm u update
     
     unew = soln((dim)*nstep+1:end-(nobj*nstep+horizon*2));
-    HOLD = [HOLD soln(end-24:end)];
+    
     oldref=xref;
 %     xref=[];
 %     for i=2:horizon+1
@@ -396,7 +397,7 @@ for k = 1:10
     
     
     % break criteria 
-    if norm(refpath-pathnew) < 0.001 && all(norm(xref-oldref)<0.001)
+    if norm(refpath-pathnew) < 0.01 && all(norm(xref-oldref)<0.01)
         pathall = [pathall pathnew]; 
         disp(['converged at step ',num2str(k)]);
         break
@@ -503,13 +504,15 @@ Tx_current =  X_out(6:10)';
 Ax_current =  states_out(11:15);
 
 theta_implement = [theta_implement [Ax_current; g_current]];
-end_implement = [end_implement  end_out]
+end_implement = [end_implement  end_out];
 traj_implement = [traj_implement X_out(11:12)'];
 pla_implement = [pla_implement X_out(13:15)'];
-MODE = [MODE mode];
+MODE = [MODE mode_];
 Dt = [Dt dt];
 
 end
+
+
 
 
 %%
@@ -596,7 +599,7 @@ xlabel('Time step')
 
 ref.v = pla_implement(2,:);
 ref.w = pla_implement(3,:);
-%%
+
 figure
 yyaxis left
 plot(ref.v,'-bx')
@@ -610,17 +613,3 @@ xlabel('Time step')
 
 %%
 theta_implement = theta_implement(2:6,:);
-%%
-split = [];
-
-for sp = 2:size(Dt,2)
-    c=Dt(sp)-Dt(sp-1);
-    if c~=0
-        split = [split sp];
-    end
-end
-split = [1 split size(Dt,2)+1]
-ref.Dt = Dt;
-ref.theta_implement = theta_implement;
-ref.split = split;
-save('good_data9.mat','ref');

@@ -45,7 +45,10 @@ for i=1:nstate
     [dis, points] = distLinSeg(pos{i}.p(:,1),pos{i}.p(:,2), obs(:,1),obs(:,2));
     if norm(dis)<0.0001
         dis = -norm(points(1:3,1)-pos{i}.p(:,2));%%%%%%%%
-    end        
+    end
+    if i == 5
+        break
+    end
     if dis < d
         d = dis;
         linkid=i;
