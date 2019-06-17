@@ -15,7 +15,7 @@ dt          = 0.5;
 % TB: trajectory dimension
 dim         = 2; %x,y
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-gr_push
+gr_push_hold
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Arm parameters
 robot=robotproperty_hc(4);
@@ -31,8 +31,9 @@ DH          =robot.DH;
 target = [-0.2; 0; 0.05];
 t_marg = [0.35 0.2 0.35 0; 0  0  0  0; 0 0 0 0];
 
-ss=85;
+ss=25;
 xV = -0.15;
+Vx = xV;
 
 for steps=1:ss
 %% Mode check and switch
@@ -42,7 +43,7 @@ if Tx_current(1) - 0.4 > 1.05
 end
 
 % Loop reference
-[xref_t,xref,xR,refpath]=generate_reference_loop_pick(var,Ax_current,Tx_current,zAT,horizon,nstate,u0,mode,target,t_marg );
+[xref_t,xref,xR,refpath]=generate_reference_loop_hold(var,Ax_current,Tx_current,zAT,zT,horizon,nstate,u0,mode_,target,t_marg );
 
 
 %% Arm Cost function and Constraints
@@ -53,192 +54,9 @@ end
 
     %% check grasping
   
-if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05 
-    %%% Platform stop%%
-    
-    if mode == 1    % Ready to grasp and lift
-        %%%%% Subscribe gripper angle%%%
-        g_current = grip_open;  %%%%%%%%%%%%%%%%
-        grip_ang = [linspace(g_current,grip_close,g_size)]';
-        
-        
-        %%%%% Subscribe motor torque/velocity%%%
-        v_grip = 0.2; %%%%
-        
-        % fine approach
-        if idx ==1
-            rate = 3/2;
-        else
-            rate = 1;
-        end
-        xref_approach = linspace(theta_implement(3,end),zAT(3)*rate,g_size);
-        
-        for ii =1:g_size
-            theta_implement = [theta_implement [theta_implement(1:2,end); xref_approach(ii); theta_implement(4:6,end)]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.2];
-        end  
-        
-        % close gripper
-        ii = 1;
-        while v_grip > 0.1 && ii<g_size+1
-            grip_pub = grip_ang(ii);
-            ii = ii+1;
-            theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.2];
-        end        
-        grasp = 1;
-        g_current = grip_pub; %%%%%%%%%%%%%%%%
-    
-        xref_lift = theta_{idx};
-                     
-
-        for j = 1:th_size  % lifting the box
-            pub = xref_lift(:,j);             
-            theta_implement = [theta_implement [Ax_current(1:2); xref_lift(:,j); g_current]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.2];
-
-            %%%% Get effort %%%%%
-%             if j >2 && mode ==3
-%                 disp('fail')
-%                 effort = randi(5);                
-%             end
-             
-
-             if  effort > 1 && j>3%sensor>threshold
-                 % FAIL: Play back and Open griper
-                 mode = 2;  % need to restart
-                 % lower gripper
-                 for b = j-1:-1:1
-                     pub = xref_lift(:,b);
-                     theta_implement = [theta_implement [Ax_current(1:2); xref_lift(:,b);g_current]];
-                     traj_implement = [traj_implement X_out(11:12)'];
-                     end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-                     end_implement = [end_implement  end_effector];
-                     pla_implement = [pla_implement [ 0 0 0]'];
-                     MODE = [MODE mode];
-                     Dt = [Dt dt*0.2];
-                 end
-                
-                 % open gripper
-                 ii=g_size;
-                 while ii>0
-                     grip_pub = grip_ang(ii);
-                     ii = ii-1;
-                     theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
-                     MODE = [MODE mode];
-                     end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-                     end_implement = [end_implement  end_effector];
-                     traj_implement = [traj_implement X_out(11:12)'];
-                     pla_implement = [pla_implement [0 0 0]'];
-                     Dt = [Dt dt*0.2];
-                 end        
-                 grasp = 0;
-                 g_current = grip_pub; %%%%%%%%%%%%%%%%
-   
-                 
-           
-             %%%%%%% lazy mode 2%%%%%%%%%%%%%%%%%%%%%%
-             [Min, idx]=min(abs([1 2 3 4 5 ] - effort*ones(1,5)));
-             xref_lift = theta_{idx};
-             t_marg(:,mode) = move_marg(:,idx);
-             zAT = [0 ;-pi;theta_{idx}(:,1)];
-             target = [-0.2; 0; 0.05];
-             xV = -0.15;                
-             grasp = 0;
-             %Tx_current =  X_out(6:10)';
-             Ax_current =  theta_implement(:,end);
-             effort = 0;
-             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                 break
-             end
-             mode = 3;  % Ready to move the object
-             %MODE = [MODE mode];
-             target = [1.5; 0; 0.05];
-             xV = 0.15;
-             zAT(2) = -pi/2; 
-         end
-    elseif mode == 2  % Second try
-        % reach
-        xref_reach = [linspace(Ax_current(3),zAT(3),10);
-                      linspace(Ax_current(4),zAT(4),10);
-                      linspace(Ax_current(5),zAT(5),10)];
-                  
-        for j = 1:10           
-            pub = xref_reach(:,j);
-            theta_implement = [theta_implement [Ax_current(1:2); xref_reach(:,j); theta_implement(6,end)]];
-            traj_implement = [traj_implement X_out(11:12)'];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            pla_implement = [pla_implement [0 0 0]'];
-            MODE = [MODE mode];
-            Dt = [Dt dt*0.2];
-        end
-        mode = 1;        
-        t_marg(:,mode) = move_marg(:,idx);
-        
-    elseif mode == 3  % Ready to put down
-        ii=g_size;
-        
-        % open gripper
-        while ii>0
-            grip_pub = grip_ang(ii);
-            ii = ii-1;
-            pause(0.1);
-            theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.2];
-        end        
-        grasp = 0;
-        g_current = grip_pub;
-        
-        
-        % restore 
-        for j = 1:th_size            
-            pub = xref_lift(:,j);
-            theta_implement = [theta_implement [Ax_current(1:2); xref_lift(:,j); theta_implement(6,end)]];
-            traj_implement = [traj_implement X_out(11:12)'];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            pla_implement = [pla_implement [0 0 0]'];
-            MODE = [MODE mode];
-            Dt = [Dt dt*0.2];
-        end
-        mode = 4;  % Ready for new task
-        zAT = [0;-pi/2;0;0;0];
-        target = [2.5; 0; 0.05];
-    
-     
-    elseif mode == 4  % Start new mission
-        mode = 1;
-        target = [0; 0; 0.05];
-        
-    end
-    
-Ax_current = theta_implement(:,end);
-%Tx_current =  X_out(6:10)';
-
 
     %% Motion planning
-else  
+
     
     % Cost Fn Parameters
     Aaug=[];Baug=zeros(horizon*nstate,horizon*nu);Qaug=zeros(horizon*nstate);
@@ -286,32 +104,35 @@ else
    
 
 %% The cost function
-    % The weight
-    c = [1,10,20];
+   % The weight
+    c = [100,10,20];
     % The distance metric between the original path and the new path
     Q1 = eye(nstep*dim);
+    x_goal = kron(ones(1, nstep),zT')';
+    %Q1((nstep-1)*dim+1:end,(nstep-1)*dim+1:end) =  eye(dim)*1000;
+    %Q1(1:dim,1:dim) =  eye(dim)*1000;
     % The velocity
     Vdiff = eye(nstep*dim)-diag(ones(1,(nstep-1)*dim),dim);
     Vconst = [-eye(2) eye(2) zeros(2,(nstep-2)*2);[[zeros((nstep-1)*2,2) eye((nstep-1)*2) ]-[eye((nstep-1)*2) zeros((nstep-1)*2,2)]]];
-    V_ratio = [5 0;0 0];
+    V_ratio = [5 0;0 1];
     Rpenalty = kron(eye(nstep),V_ratio);
     Q2 = Vconst'*Rpenalty'*Rpenalty*Vconst;
     %Q2 = Vdiff(1:(nstep-1)*dim,:)'*Q1(1+dim:end,1+dim:end)*Vdiff(1:(nstep-1)*dim,:);
-    Vref = [xV,0]*dt;    
+    Vref = [Vx,0]*dt;    
     Vref_1 = c(2)*kron(ones(1, nstep),Vref)*Rpenalty'*Rpenalty*Vconst;
     % The accelaration
     Vdiff = eye(nstep*dim)-diag(ones(1,(nstep-1)*dim),dim);
     Adiff = Vdiff-diag(ones(1,(nstep-1)*dim),dim)+diag(ones(1,(nstep-2)*dim),dim*2);
-    Q3 = Adiff(1:(nstep-2)*dim,:)'*Adiff(1:(nstep-2)*dim,:);   
+    Q3 = Adiff(1:(nstep-2)*dim,:)'*Adiff(1:(nstep-2)*dim,:);    
 %% Cost function update
-    dir = [zT(1)-(-6) zT(2)-0];
-    %dir = [zT(1)-Tx_current(1) zT(2)-Tx_current(2)];
-    dir_T = (1/norm(dir))*[ zT(2)-0 -zT(1)+(-6)];
-    dd = kron(ones(nstep,1),dir_T*[-6;0]);
-    D = kron(eye(nstep),dir_T);
-    % Distance to reference line
-    Q1 = D'*D;
-    Xdis_1 = 2*c(1)*dd'*D;
+%     dir = [zT(1)-(-6) zT(2)-0];
+%     %dir = [zT(1)-Tx_current(1) zT(2)-Tx_current(2)];
+%     dir_T = (1/norm(dir))*[ zT(2)-0 -zT(1)+(-6)];
+%     dd = kron(ones(nstep,1),dir_T*[-6;0]);
+%     D = kron(eye(nstep),dir_T);
+%     % Distance to reference line
+%     Q1 = D'*D;
+    Xdis_1 = c(1)*x_goal'* Q1';
     % The total costj
     Qref = 1*(Q1*c(1)+Q2*c(2)+Q3*c(3));
     Qabs = 0*Q3*c(3);
@@ -667,13 +488,13 @@ theta_implement = [theta_implement [Ax_current; g_current]];
 end_implement = [end_implement  end_out];
 traj_implement = [traj_implement X_out(11:12)'];
 pla_implement = [pla_implement X_out(13:15)'];
-MODE = [MODE mode];
+MODE = [MODE mode_];
 Dt = [Dt dt];
 
 end
 
 
-end
+
 
 %%
 figure(fighandle(1));

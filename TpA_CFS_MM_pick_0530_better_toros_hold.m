@@ -243,7 +243,7 @@ refpath
     
     
 x_out
-pause
+%pause
  
 
 %% Iterative Quadratic Program solve 
