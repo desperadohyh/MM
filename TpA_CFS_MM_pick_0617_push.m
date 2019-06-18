@@ -167,7 +167,7 @@ beq = [refpath(1:2)];
 
 
 
- for k = 1:25
+ for k = 1:35
     FEAS = 1;
     %% The constraint
     Lstack = []; Sstack = []; 
@@ -289,7 +289,7 @@ for k = 1:10
         theta=xref(nstate*(i-1)+1:nstate*(i-1)+njoint);
         [end_dis,distance,linkid]=dist_end_point(theta,DH(1:njoint,:),base,obs_arm,robot.cap);
         rec_d = [rec_d distance];
-        
+        Link = [Link linkid];
         I = [I;distance-D];
         
         ff = @(x) dist_arm_3D_Heu_hc(x,DH(1:njoint,:),base,obs_arm,robot.cap);
@@ -303,11 +303,11 @@ for k = 1:10
         LLA = [LLA;l];
         SSA = [SSA;s];
         % Soft constraint
-        LA=[LA; [zeros(1,nstep*2) l zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i) zeros(1,horizon)]];
-        SA=[SA;s];  
+        %LA=[LA; [zeros(1,nstep*2) l zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i) zeros(1,horizon)]];
+        %SA=[SA;s];  
          
-        LA = [LA;[zeros(1,nstep*2) zeros(1,horizon*5) zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i) zeros(1,horizon)]];
-        SA = [SA;0];
+        %LA = [LA;[zeros(1,nstep*2) zeros(1,horizon*5) zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i) zeros(1,horizon)]];
+        %SA = [SA;0];
         
         
         % hold 
