@@ -15,7 +15,7 @@ dt          = 0.5;
 % TB: trajectory dimension
 dim         = 2; %x,y
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-gr_pick
+gr_push_hold
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Arm parameters
 robot=robotproperty_hc(4);
@@ -28,20 +28,12 @@ DH          =robot.DH;
 
 %%
 % Target
-%target = [-0.2; 0; 0.05];
-target = [0.5+dx; 0; 0.05];
+target = [-0.2; 0; 0.05];
 t_marg = [0.35 0.2 0.35 0; 0  0  0  0; 0 0 0 0];
 
-%ss=85;
-ss=55;
+ss=25;
 xV = -0.15;
-
-% new added
-WP_implemented = {};
-
-not_move = kron(Tx_current,ones(1,nstep));
-odom_path_msg = record_im(not_move);
-WP_implemented{end+1} = odom_path_msg;
+Vx = xV;
 
 for steps=1:ss
 %% Mode check and switch
@@ -51,7 +43,7 @@ if Tx_current(1) - 0.4 > 1.05
 end
 
 % Loop reference
-[xref_t,xref,xR,refpath]=generate_reference_loop_pick(var,Ax_current,Tx_current,zAT,horizon,nstate,u0,mode,target,t_marg );
+[xref_t,xref,xR,refpath]=generate_reference_loop_hold(var,Ax_current,Tx_current,zAT,zT,horizon,nstate,u0,mode_,target,t_marg );
 
 
 %% Arm Cost function and Constraints
@@ -62,232 +54,9 @@ end
 
     %% check grasping
   
-if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05 
-    %%% Platform stop%%
-    
-    if mode == 1    % Ready to grasp and lift
-        %%%%% Subscribe gripper angle%%%
-        g_current = grip_open;  %%%%%%%%%%%%%%%%
-        grip_ang = [linspace(g_current,grip_close,g_size)]';
-        
-        
-        %%%%% Subscribe motor torque/velocity%%%
-        v_grip = 0.2; %%%%
-        
-        % fine approach
-        if idx ==2
-            rate = 3/2;
-        else
-            rate = 1;
-        end
-        xref_approach = linspace(theta_implement(3,end),zAT(3)*rate,g_size);
-        
-        for ii =1:g_size
-            theta_implement = [theta_implement [theta_implement(1:2,end); xref_approach(ii); theta_implement(4:6,end)]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.2];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
-        end  
-        
-        %% wait
-        for ii =1:g_size
-            theta_implement = [theta_implement [theta_implement(1:2,end); xref_approach(g_size); theta_implement(4:6,end)]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.4];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
-        end  
-        
-        % close gripper
-        ii = 1;
-        while v_grip > 0.1 && ii<g_size+1
-            grip_pub = grip_ang(ii);
-            ii = ii+1;
-            theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.2];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
-        end        
-        grasp = 1;
-        g_current = grip_pub; %%%%%%%%%%%%%%%%
-    
-        xref_lift = theta_{idx};
-                     
-
-        for j = 1:th_size  % lifting the box
-            pub = xref_lift(:,j);             
-            theta_implement = [theta_implement [Ax_current(1:2); xref_lift(:,j); g_current]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.2];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
-
-            %%%% Get effort %%%%%
-%             if j >2 && mode ==3
-%                 disp('fail')
-%                 effort = randi(5);                
-%             end
-             
-
-             if  effort > 1 && j>3%sensor>threshold
-                 % FAIL: Play back and Open griper
-                 mode = 2;  % need to restart
-                 % lower gripper
-                 for b = j-1:-1:1
-                     pub = xref_lift(:,b);
-                     theta_implement = [theta_implement [Ax_current(1:2); xref_lift(:,b);g_current]];
-                     traj_implement = [traj_implement X_out(11:12)'];
-                     end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-                     end_implement = [end_implement  end_effector];
-                     pla_implement = [pla_implement [ 0 0 0]'];
-                     MODE = [MODE mode];
-                     Dt = [Dt dt*0.2];
-                     not_move = kron(Tx_current,ones(1,nstep));
-                    odom_path_msg = record_im(not_move);
-                    WP_implemented{end+1} = odom_path_msg;
-                 end
-                
-                 % open gripper
-                 ii=g_size;
-                 while ii>0
-                     grip_pub = grip_ang(ii);
-                     ii = ii-1;
-                     theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
-                     MODE = [MODE mode];
-                     end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-                     end_implement = [end_implement  end_effector];
-                     traj_implement = [traj_implement X_out(11:12)'];
-                     pla_implement = [pla_implement [0 0 0]'];
-                     Dt = [Dt dt*0.2];
-                     not_move = kron(Tx_current,ones(1,nstep));
-                    odom_path_msg = record_im(not_move);
-                    WP_implemented{end+1} = odom_path_msg;
-                 end        
-                 grasp = 0;
-                 g_current = grip_pub; %%%%%%%%%%%%%%%%
-   
-                 
-           
-             %%%%%%% lazy mode 2%%%%%%%%%%%%%%%%%%%%%%
-             [Min, idx]=min(abs([1 2 3 4 5 ] - effort*ones(1,5)));
-             xref_lift = theta_{idx};
-             t_marg(:,mode) = move_marg(:,idx);
-             zAT = [0 ;-pi;theta_{idx}(:,1)];
-             target = [0.5+dx; 0; 0.05];
-             xV = -0.15;                
-             grasp = 0;
-             %Tx_current =  X_out(6:10)';
-             Ax_current =  theta_implement(:,end);
-             effort = 0;
-             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                 break
-             end
-             mode = 3;  % Ready to move the object
-             %MODE = [MODE mode];
-             target = [1.5+dx; 0; 0.05];
-             xV = 0.15;
-             zAT(2) = -pi/2; 
-         end
-    elseif mode == 2  % Second try
-        % reach
-        xref_reach = [linspace(Ax_current(3),zAT(3),10);
-                      linspace(Ax_current(4),zAT(4),10);
-                      linspace(Ax_current(5),zAT(5),10)];
-                  
-        for j = 1:10           
-            pub = xref_reach(:,j);
-            theta_implement = [theta_implement [Ax_current(1:2); xref_reach(:,j); theta_implement(6,end)]];
-            traj_implement = [traj_implement X_out(11:12)'];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            pla_implement = [pla_implement [0 0 0]'];
-            MODE = [MODE mode];
-            Dt = [Dt dt*0.2];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
-        end
-        
-        
-        mode = 1;        
-        t_marg(:,mode) = move_marg(:,idx);
-        
-    elseif mode == 3  % Ready to put down
-        ii=g_size;
-        
-        % open gripper
-        while ii>0
-            grip_pub = grip_ang(ii);
-            ii = ii-1;
-            pause(0.1);
-            theta_implement = [theta_implement [theta_implement(1:5,end); grip_pub]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.2];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
-        end        
-        grasp = 0;
-        g_current = grip_pub;
-        
-        
-        % restore 
-        for j = 1:th_size            
-            pub = xref_lift(:,j);
-            theta_implement = [theta_implement [Ax_current(1:2); xref_lift(:,j); theta_implement(6,end)]];
-            traj_implement = [traj_implement X_out(11:12)'];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            pla_implement = [pla_implement [0 0 0]'];
-            MODE = [MODE mode];
-            Dt = [Dt dt*0.2];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
-        end
-        mode = 4;  % Ready for new task
-        zAT = [0;-pi/2;0;0;0];
-        target = [2.5+dx; 0; 0.05];
-    
-     
-    elseif mode == 4  % Start new mission
-        mode = 1;
-        target = [0+dx; 0; 0.05];
-        
-    end
-    
-Ax_current = theta_implement(:,end);
-%Tx_current =  X_out(6:10)';
-
 
     %% Motion planning
-else  
+
     
     % Cost Fn Parameters
     Aaug=[];Baug=zeros(horizon*nstate,horizon*nu);Qaug=zeros(horizon*nstate);
@@ -335,32 +104,35 @@ else
    
 
 %% The cost function
-    % The weight
-    c = [1,10,20];
+   % The weight
+    c = [100,10,20];
     % The distance metric between the original path and the new path
     Q1 = eye(nstep*dim);
+    x_goal = kron(ones(1, nstep),zT')';
+    %Q1((nstep-1)*dim+1:end,(nstep-1)*dim+1:end) =  eye(dim)*1000;
+    %Q1(1:dim,1:dim) =  eye(dim)*1000;
     % The velocity
     Vdiff = eye(nstep*dim)-diag(ones(1,(nstep-1)*dim),dim);
     Vconst = [-eye(2) eye(2) zeros(2,(nstep-2)*2);[[zeros((nstep-1)*2,2) eye((nstep-1)*2) ]-[eye((nstep-1)*2) zeros((nstep-1)*2,2)]]];
-    V_ratio = [5 0;0 0];
+    V_ratio = [5 0;0 1];
     Rpenalty = kron(eye(nstep),V_ratio);
     Q2 = Vconst'*Rpenalty'*Rpenalty*Vconst;
     %Q2 = Vdiff(1:(nstep-1)*dim,:)'*Q1(1+dim:end,1+dim:end)*Vdiff(1:(nstep-1)*dim,:);
-    Vref = [xV,0]*dt;    
+    Vref = [Vx,0]*dt;    
     Vref_1 = c(2)*kron(ones(1, nstep),Vref)*Rpenalty'*Rpenalty*Vconst;
     % The accelaration
     Vdiff = eye(nstep*dim)-diag(ones(1,(nstep-1)*dim),dim);
     Adiff = Vdiff-diag(ones(1,(nstep-1)*dim),dim)+diag(ones(1,(nstep-2)*dim),dim*2);
-    Q3 = Adiff(1:(nstep-2)*dim,:)'*Adiff(1:(nstep-2)*dim,:);   
+    Q3 = Adiff(1:(nstep-2)*dim,:)'*Adiff(1:(nstep-2)*dim,:);    
 %% Cost function update
-    dir = [zT(1)-(-6) zT(2)-0];
-    %dir = [zT(1)-Tx_current(1) zT(2)-Tx_current(2)];
-    dir_T = (1/norm(dir))*[ zT(2)-0 -zT(1)+(-6)];
-    dd = kron(ones(nstep,1),dir_T*[-6;0]);
-    D = kron(eye(nstep),dir_T);
-    % Distance to reference line
-    Q1 = D'*D;
-    Xdis_1 = 2*c(1)*dd'*D;
+%     dir = [zT(1)-(-6) zT(2)-0];
+%     %dir = [zT(1)-Tx_current(1) zT(2)-Tx_current(2)];
+%     dir_T = (1/norm(dir))*[ zT(2)-0 -zT(1)+(-6)];
+%     dd = kron(ones(nstep,1),dir_T*[-6;0]);
+%     D = kron(eye(nstep),dir_T);
+%     % Distance to reference line
+%     Q1 = D'*D;
+    Xdis_1 = c(1)*x_goal'* Q1';
     % The total costj
     Qref = 1*(Q1*c(1)+Q2*c(2)+Q3*c(3));
     Qabs = 0*Q3*c(3);
@@ -395,7 +167,7 @@ beq = [refpath(1:2)];
 
 
 
- for k = 1:25
+ for k = 1:35
     FEAS = 1;
     %% The constraint
     Lstack = []; Sstack = []; 
@@ -492,9 +264,9 @@ for k = 1:10
             %LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim) zeros(1,nstep)];
             
             % Soft constraint
-            LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim)  zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,horizon)];
+            LT = [LT;zeros(1,(i-1)*dim) L zeros(1,(nstep-i)*dim)  zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,horizon*2)];
             ST = [ST;S-margin];            
-            LT= [LT;zeros(1,nstep*2) zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,horizon)];
+            LT= [LT;zeros(1,nstep*2) zeros(1,5*24) zeros(1,(i-1)*nobj+j-1) -1 zeros(1,nobj*(nstep+1-i)-j) zeros(1,horizon*2)];
             ST = [ST;0];
             
         end
@@ -510,37 +282,58 @@ for k = 1:10
     I=[];
     rec_d = [];
     for i=1:horizon
-        % provide base according to current 2D path 
+        % provide mode_ according to current 2D path 
         xy = refpath(i*2+1:(i+1)*2);
         base = [xy' 0.1];
         % get reference theta
         theta=xref(nstate*(i-1)+1:nstate*(i-1)+njoint);
-        [distance,linkid]=dist_arm_3D_Heu_hc(theta,DH(1:njoint,:),base,obs_arm,robot.cap);
+        [end_dis,distance,linkid]=dist_end_point(theta,DH(1:njoint,:),base,obs_arm,robot.cap);
         rec_d = [rec_d distance];
-        
+        Link = [Link linkid];
         I = [I;distance-D];
+        
         ff = @(x) dist_arm_3D_Heu_hc(x,DH(1:njoint,:),base,obs_arm,robot.cap);
         Diff = num_jac(ff,theta); Diff = Diff';
         
+        
         Bj=Baug((i-1)*nstate+1:i*nstate,1:horizon*nu);
+        size(uref);
         s=I(i)+Diff'*Bj(1:njoint,:)*uref;
         l=Diff'*Bj(1:njoint,:);
         LLA = [LLA;l];
         SSA = [SSA;s];
         % Soft constraint
-        LA=[LA; [zeros(1,nstep*2) l zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i)]];
+        %LA=[LA; [zeros(1,nstep*2) l zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i) zeros(1,horizon)]];
+        %SA=[SA;s];  
+         
+        %LA = [LA;[zeros(1,nstep*2) zeros(1,horizon*5) zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i) zeros(1,horizon)]];
+        %SA = [SA;0];
+        
+        
+        % hold 
+        
+        ee_I = [ee_I; h_D-end_dis ];
+        h_ff = @(x) dist_end_point(x,DH(1:njoint,:),base,obs_arm,robot.cap);
+        h_Diff = num_jac(ff,theta); h_Diff = h_Diff';
+        
+        s=ee_I(i)-h_Diff'*Bj(1:njoint,:)*uref;
+        l=-h_Diff'*Bj(1:njoint,:);
+        LLA = [LLA;l];
+        SSA = [SSA;s];
+        % Soft constraint
+        LA=[LA; [zeros(1,nstep*2) l zeros(1,nstep*nobj) zeros(1,horizon) zeros(1,i-1) -1 zeros(1,horizon-i)]];
         SA=[SA;s];  
          
-        LA = [LA;[zeros(1,nstep*2) zeros(1,horizon*5) zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i)]];
+        LA = [LA;[zeros(1,nstep*2) zeros(1,horizon*5)  zeros(1,horizon) zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i)]];
         SA = [SA;0];
         
     end
 % TpA
     % Quadratic term
     Q = blkdiag(QT,0.1*QA);
-    Q = blkdiag(Q,1000*diag(ones(1,nobj*nstep)),1000*diag(ones(1,horizon)));
+    Q = blkdiag(Q,1000*diag(ones(1,nobj*nstep)),1000*diag(ones(1,horizon)),100*diag(ones(1,horizon)));
     % Linear term
-    f = [fT' 0.1*fA'  zeros(nobj*nstep+horizon,1)']';
+    f = [fT' 0.1*fA'  zeros(nobj*nstep+horizon*2,1)']';
     % inequality 
     LTpA = [LT;LA];
     STpA = [ST;SA];
@@ -550,16 +343,14 @@ for k = 1:10
     Aw1 = Aaug(1:nstate:end,:);
     Bw1 = Baug(1:nstate:end,:);
     AAxy = zeros(nstep,nstep*2);
-    AAu = eye(nstep);
-    AAw = [zeros(1,nu*horizon);-Bw1];
     AA = [AT zeros(size(AT,1),5*24 )];
-    AA = [AA zeros(size(AA,1),nobj*nstep+horizon)];
+    AA = [AA zeros(size(AA,1),nobj*nstep+horizon*2)];
     BA = [bT;];
     
     % Inequality constraints for th1 angle
-    LTpA = [LTpA; [AAxy  [zeros(1,nu*horizon);-Bw1] zeros(size(AAxy,1),nobj*nstep+horizon) ] ];
+    LTpA = [LTpA; [AAxy  [zeros(1,nu*horizon);-Bw1] zeros(size(AAxy,1),nobj*nstep+horizon*2) ] ];
     STpA = [STpA;0; -uref_(2:end)' + Aw1*xR(:,1)+0.1];
-    LTpA = [LTpA; [AAxy  [zeros(1,nu*horizon);Bw1] zeros(size(AAxy,1),nobj*nstep+horizon) ] ];
+    LTpA = [LTpA; [AAxy  [zeros(1,nu*horizon);Bw1] zeros(size(AAxy,1),nobj*nstep+horizon*2) ] ];
     STpA = [STpA;0; uref_(2:end)' - Aw1*xR(:,1)+0.1];
     
     % continuity cinstraints
@@ -580,7 +371,7 @@ for k = 1:10
     x_out = soln(1:2:2*25);
     y_out = soln(2:2:2*25);
     %u_out = soln(2*25+1:3*25);
-    alpha_out = soln(2*25+1:end-(nobj*nstep+horizon));
+    alpha_out = soln(2*25+1:end-(nobj*nstep+horizon*2));
     states_out = Aaug*xR(:,1)+Baug*alpha_out;
     theta_out = [  Ax_current(1)  states_out(1:10:end)';
                    Ax_current(2)  states_out(2:10:end)';
@@ -592,7 +383,7 @@ for k = 1:10
                     
     % Arm u update
     
-    unew = soln((dim)*nstep+1:end-(nobj*nstep+horizon));
+    unew = soln((dim)*nstep+1:end-(nobj*nstep+horizon*2));
     
     oldref=xref;
 %     xref=[];
@@ -716,16 +507,13 @@ theta_implement = [theta_implement [Ax_current; g_current]];
 end_implement = [end_implement  end_out];
 traj_implement = [traj_implement X_out(11:12)'];
 pla_implement = [pla_implement X_out(13:15)'];
-MODE = [MODE mode];
+MODE = [MODE mode_];
 Dt = [Dt dt];
 
-odom_path_msg = record_im(X_out);
-WP_implemented{end+1} = odom_path_msg;
-
 end
 
 
-end
+
 
 %%
 figure(fighandle(1));
@@ -733,7 +521,7 @@ ob = Polyhedron('V',obs{1}.poly');
 Obs = ob.plot('color','g');
 hold on
 axis equal
-axis([-0.5+dx 3.5+dx -.6 .5 -0.5 1.2]);
+axis([-0.5 3.5 -.6 .5 -0.5 1.2]);
 r=obs_arm_r;
 [X,Y,Z] = cylinder(r);
 h=mesh(X+obs_c(1),Y+obs_c(2),Z*0.5,'facecolor',[1 0 0]);
@@ -825,18 +613,3 @@ xlabel('Time step')
 
 %%
 theta_implement = theta_implement(2:6,:);
-%%
-split = [];
-
-for sp = 2:size(Dt,2)
-    c=Dt(sp)-Dt(sp-1);
-    if c~=0
-        split = [split sp];
-    end
-end
-split = [1 split size(Dt,2)+1]
-ref.Dt = Dt;
-ref.theta_implement = theta_implement;
-ref.split = split;
-ref.WP_implemented = WP_implemented;
-save('good_data10.mat','ref');

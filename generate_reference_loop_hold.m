@@ -1,4 +1,4 @@
-function [xref_t,xref,xR,refpath]=generate_reference_loop_pick(var,Ax_current,Tx_current,zAT,horizon,nstate,u0,MODE_,target,t_marg )
+function [xref_t,xref,xR,refpath]=generate_reference_loop_pick(var,Ax_current,Tx_current,zAT,zT,horizon,nstate,u0,MODE_,target,t_marg )
 
 nstep = horizon+1;
 
@@ -19,10 +19,7 @@ switch MODE_
         % Turtlebot
         
         
-%         path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
-%                 linspace(Tx_current(2),0,nstep)];
-            
-            path = [linspace(Tx_current(1),Tx_current(1)+2,nstep);
+        path = [linspace(Tx_current(1),zT(1),nstep);
                 linspace(Tx_current(2),0,nstep)];
         
     case 2  % Retry
@@ -36,11 +33,8 @@ switch MODE_
                 
         % Turtlebot
         
-%         
-%         path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
-%                 linspace(Tx_current(2),0,nstep)];
-
-path = [linspace(Tx_current(1),Tx_current(1)+2,nstep);
+        
+        path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
                 linspace(Tx_current(2),0,nstep)];
 
     case 3  % Leave
@@ -55,11 +49,8 @@ path = [linspace(Tx_current(1),Tx_current(1)+2,nstep);
                     zeros(5,nstep)];
                 
         % Turtlebot
-%         
-%         path = [linspace(Tx_current(1),Tx_current(1)+2,nstep);
-%                 linspace(Tx_current(2),0,nstep)];
-            
-            path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
+        
+        path = [linspace(Tx_current(1),Tx_current(1)+2,nstep);
                 linspace(Tx_current(2),0,nstep)];
             
     case 4  % Go back to neutral
@@ -75,12 +66,11 @@ path = [linspace(Tx_current(1),Tx_current(1)+2,nstep);
                 
         % Turtlebot
         
-%         
-%         path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
-%                 linspace(Tx_current(2),0,nstep)];   
-%             
-       path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
-                linspace(Tx_current(2),0,nstep)];
+        
+        path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
+                linspace(Tx_current(2),0,nstep)];   
+            
+       
         
         
            
