@@ -29,12 +29,12 @@ DH          =robot.DH;
 %%
 % Target
 %target = [-0.2; 0; 0.05];
-target = [0.5+dx; 0; 0.05];
-t_marg = [0.35 0.2 0.35 0; 0  0  0  0; 0 0 0 0];
+target = [1.5; 0; 0.05];
+t_marg = -[0.35 0.2 0.35 0; 0  0  0  0; 0 0 0 0];
 
 %ss=85;
-ss=55;
-xV = -0.15;
+ss=45;
+xV = 0.15;
 
 % new added
 WP_implemented = {};
@@ -195,8 +195,8 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
              xref_lift = theta_{idx};
              t_marg(:,mode) = move_marg(:,idx);
              zAT = [0 ;-pi;theta_{idx}(:,1)];
-             target = [0.5+dx; 0; 0.05];
-             xV = -0.15;                
+             target = [1.5; 0; 0.05];
+             xV = 0.15;                
              grasp = 0;
              %Tx_current =  X_out(6:10)';
              Ax_current =  theta_implement(:,end);
@@ -206,8 +206,8 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
              end
              mode = 3;  % Ready to move the object
              %MODE = [MODE mode];
-             target = [1.5+dx; 0; 0.05];
-             xV = 0.15;
+             target = [0.5; 0; 0.05];
+             xV = -0.15;
              zAT(2) = -pi/2; 
          end
     elseif mode == 2  % Second try
@@ -273,12 +273,12 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
         end
         mode = 4;  % Ready for new task
         zAT = [0;-pi/2;0;0;0];
-        target = [2.5+dx; 0; 0.05];
+        target = [0; 0; 0.05];
     
      
     elseif mode == 4  % Start new mission
         mode = 1;
-        target = [0+dx; 0; 0.05];
+        target = [0; 0; 0.05];
         
     end
     

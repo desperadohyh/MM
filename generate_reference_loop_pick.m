@@ -19,7 +19,10 @@ switch mode
         % Turtlebot
         
         
-        path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
+%         path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
+%                 linspace(Tx_current(2),0,nstep)];
+            
+            path = [linspace(Tx_current(1),Tx_current(1)+2,nstep);
                 linspace(Tx_current(2),0,nstep)];
         
     case 2  % Retry
@@ -33,8 +36,11 @@ switch mode
                 
         % Turtlebot
         
-        
-        path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
+%         
+%         path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
+%                 linspace(Tx_current(2),0,nstep)];
+
+path = [linspace(Tx_current(1),Tx_current(1)+2,nstep);
                 linspace(Tx_current(2),0,nstep)];
 
     case 3  % Leave
@@ -49,8 +55,11 @@ switch mode
                     zeros(5,nstep)];
                 
         % Turtlebot
-        
-        path = [linspace(Tx_current(1),Tx_current(1)+2,nstep);
+%         
+%         path = [linspace(Tx_current(1),Tx_current(1)+2,nstep);
+%                 linspace(Tx_current(2),0,nstep)];
+            
+            path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
                 linspace(Tx_current(2),0,nstep)];
             
     case 4  % Go back to neutral
@@ -66,11 +75,12 @@ switch mode
                 
         % Turtlebot
         
-        
-        path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
-                linspace(Tx_current(2),0,nstep)];   
-            
-       
+%         
+%         path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
+%                 linspace(Tx_current(2),0,nstep)];   
+%             
+       path = [linspace(Tx_current(1),Tx_current(1)-2,nstep);
+                linspace(Tx_current(2),0,nstep)];
         
         
            

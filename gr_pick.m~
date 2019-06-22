@@ -59,7 +59,7 @@ x0 = 0;
 y0 = 0;
 z0 = [x0;y0];
 Tx_current = [[x0;y0];0;0;0];
-zT = [2;0];
+zT = [2+dx;0];
 % horizon settings
 vision = 2;
 
