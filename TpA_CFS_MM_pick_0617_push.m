@@ -1,6 +1,6 @@
 clc
 clear all
-close all
+%close all
 fighandle = [];
 fighandle(1) = figure(1); hold on;
 set(gcf, 'position', [0 0 500 500]);
@@ -207,7 +207,7 @@ beq = [refpath(1:2)];
     %% QP     
     % enlarge A ,f for soft constraint
     
-    H = blkdiag(Qref+Qabs,1000*diag(ones(1,nobj*nstep+(nstep-1)*2)));
+    H = blkdiag(Qref+Qabs,100000*diag(ones(1,nobj*nstep+(nstep-1)*2)));
     f = [-[Xdis_1']-[Vref_1']; zeros(nobj*nstep+(nstep-1)*2,1)];
     %f = [-Qref*oripath; zeros(nobj*nstep,1)]';
     options =  optimoptions('quadprog','Display','off');
@@ -584,6 +584,7 @@ end
 
 %%
 figure
+%theta_implement= [theta_implement [zAT' 0]'];
 plot(theta_implement(1,:),'-ko')
 hold on
 plot(theta_implement(2,:),'m-d')
@@ -592,6 +593,7 @@ plot(theta_implement(3,:),'--x')
 plot(theta_implement(4,:),'-r*')
 plot(theta_implement(5,:),'-go')
 plot(theta_implement(6,:),'-yo')
+
 plot(MODE)
 legend('platform angle','\theta_1','\theta_2','\theta_3','\theta_4','Gripper', 'Mode' ,'location','eastoutside')
 ylabel('Angle[rad]')
@@ -612,4 +614,4 @@ legend('Vel','AngVel','location','best')
 xlabel('Time step')
 
 %%
-theta_implement = theta_implement(2:6,:);
+%theta_implement = theta_implement(2:6,:);
