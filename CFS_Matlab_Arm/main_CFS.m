@@ -127,17 +127,17 @@ for k=1:MAX_ITER
     end
 end
 %% Visualization (This may take a while ...)
-DrawMap;
-for i=1:1:horizon
-    robot.DH(1:njoint,1)=xref((i-1)*nstate+1:(i-1)*nstate+njoint);
-        
-    % Use the following lines to draw capsules
-%     color=[i/horizon,i/horizon,i/horizon];
-%     valpha=0.2;
-%     RobotCapLink;
-    
-    % Use the following lines to draw robot arm
-    valpha=1;%i/horizon;
-    RobotFigureLink;
-
-end
+% DrawMap;
+% for i=1:1:horizon
+%     robot.DH(1:njoint,1)=xref((i-1)*nstate+1:(i-1)*nstate+njoint);
+%         
+%     % Use the following lines to draw capsules
+% %     color=[i/horizon,i/horizon,i/horizon];
+% %     valpha=0.2;
+% %     RobotCapLink;
+%     
+%     % Use the following lines to draw robot arm
+%     valpha=1;%i/horizon;
+%     RobotFigureLink;
+% 
+% end

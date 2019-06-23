@@ -1,4 +1,4 @@
-function [ dis, linkid] = dist_end_point(theta,DH,base,obs,cap)
+function [ dis,pos] = plot_link(theta,DH,base,obs,cap)
 % ????obstacle???arm????id
 T = [0   0 -0.15    0   0.03 0.13;
      0   0   0      0  -0.12   0 ;
@@ -21,6 +21,7 @@ nlink=size(theta,1);
 pos=cell(1,nlink);
 M=cell(1,nlink+1); M{1}=eye(4);
 for i=2:nlink+1
+    RoCap{i-1}.p(:,3)=[0;0;0];
         % R in book
         R=[cos(theta(i-1)) -sin(theta(i-1))  0;
             sin(theta(i-1)) cos(theta(i-1))  0;
@@ -36,7 +37,7 @@ for i=2:nlink+1
             R = Rx*R;
         end
         M{i}=M{i-1}*[R T(:,i); zeros(1,3) 1]; 
-        for k=1:2
+        for k=1:3
          pos{i-1}.p(:,k)=M{i}(1:3,1:3)*RoCap{i-1}.p(:,k)+M{i}(1:3,4)+base;
         end
 end
@@ -46,12 +47,6 @@ i=5;
     if norm(dis)<0.0001
         dis = -norm(points(1:3,1)-pos{i}.p(:,2))%%%%%%%%
     end
-%     if i == 5
-%         break
-%     end
-    if dis < d
-        d = dis;
-        linkid=i;
-    end
+
 
 end

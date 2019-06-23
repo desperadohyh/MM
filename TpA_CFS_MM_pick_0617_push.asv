@@ -328,8 +328,8 @@ for k = 1:10
         SA = [SA;0];
         
         
-        s=h_D+end_dis-h_Diff'*Bj(1:njoint,:)*uref;
-        l=-h_Diff'*Bj(1:njoint,:);
+        s=ee_I(i)+h_Diff'*Bj(1:njoint,:)*uref;
+        l=h_Diff'*Bj(1:njoint,:);
         
         LA=[LA; [zeros(1,nstep*2) l zeros(1,nstep*nobj) zeros(1,horizon) zeros(1,i-1) -1 zeros(1,horizon-i)]];
         SA=[SA;s];  
