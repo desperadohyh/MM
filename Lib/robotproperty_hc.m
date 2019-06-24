@@ -119,8 +119,8 @@ switch id
         robot.cap{4}.p=[0 0.124;0 0;0 0];
         robot.cap{4}.r=0.025;
         
-        robot.cap{5}.p=[0 0.12;0 0;0 0];
-        %robot.cap{5}.p=[0.077 0.083;0 0;0 0];
+        %robot.cap{5}.p=[0 0.12;0 0;0 0];
+        robot.cap{5}.p=[0.077 0.083;0 0;0 0];
         robot.cap{5}.r=0.025;        
         
         load('figure/RobotCapsules.mat');

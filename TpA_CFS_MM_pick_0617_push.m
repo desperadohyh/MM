@@ -97,9 +97,9 @@ end
     R=R+R';
     
     % Quadratic term
-    QA =  Baug'*Qaug*Baug+R.*10;
+    QA = R.*10;%+ Baug'*Qaug*Baug;
     % Linear term
-    fA = ((Aaug*xR(:,1)-xref)'*Qaug*Baug)';
+    fA = zeros(120,1);%((Aaug*xR(:,1)-xref)'*Qaug*Baug)';
     
    
 
@@ -294,7 +294,13 @@ for k = 1:10
 %         
 %         ff = @(x) dist_arm_3D_Heu_hc(x,DH(1:njoint,:),base,obs_arm,robot.cap);
 %         Diff = num_jac(ff,theta); Diff = Diff';
-%         
+         h_Diff=zeros(njoint,1);
+            for s=1:njoint
+                %[theta(1:s-1);x;theta(s+1:end)]???theta???????????????x???
+                % ??????????
+                [h_Diff(s),~]=derivest(@(x) dist_end_point([theta(1:s-1);x;theta(s+1:end)],DH(1:njoint,:),base,obs_arm,robot.cap),theta(s),'Vectorized','no');
+                %[Diff(s),~]=derivest(@(x) dist_arm_3D([theta(1:s-1);x;theta(s+1:end)],DH(1:njoint,:),base,obs,robot.cap),theta(s),'Vectorized','no');
+            end
 %         
          Bj=Baug((i-1)*nstate+1:i*nstate,1:horizon*nu);
 %         size(uref);
@@ -313,8 +319,8 @@ for k = 1:10
         % hold 
         
         ee_I = [ee_I; h_D-end_dis ];
-        h_ff = @(x) dist_end_point(x,DH(1:njoint,:),base,obs_arm,robot.cap);
-        h_Diff = num_jac(h_ff,theta); h_Diff = h_Diff';
+%         h_ff = @(x) dist_end_point(x,DH(1:njoint,:),base,obs_arm,robot.cap);
+%         h_Diff = num_jac(h_ff,theta); h_Diff = h_Diff';
         
         s=ee_I(i)+h_Diff'*Bj(1:njoint,:)*uref;
         l=h_Diff'*Bj(1:njoint,:);
@@ -438,11 +444,11 @@ toc
     
     L2 = diag([100 100 0 0 0 1000 10 ]);
     L2=reshape(repmat(L2,1,NILQR),7,7,NILQR);
-    l=zeros(1,NILQR);
+    l1=zeros(1,NILQR);
     %u0 = zeros(2,NILQR-1);
 
 
-    [ X_out, u, xbar, ubar, kk, K, sigsu, A, B ] = MaxEntILQR( L2, L1, l, Tx_current, u0, var, xref_ );
+    [ X_out, u, xbar, ubar, kk, K, sigsu, A, B ] = MaxEntILQR( L2, L1, l1, Tx_current, u0, var, xref_ );
 %     Tx_current
 %     xref_
 %     X_out(4:5:end)
