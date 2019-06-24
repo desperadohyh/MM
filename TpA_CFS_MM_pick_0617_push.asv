@@ -31,7 +31,7 @@ DH          =robot.DH;
 target = [-0.2; 0; 0.05];
 t_marg = [0.35 0.2 0.35 0; 0  0  0  0; 0 0 0 0];
 
-ss=20;
+ss=15;
 xV = -0.15;
 Vx = xV;
 
@@ -89,15 +89,15 @@ end
     R=eye(horizon*nu);
     for i=1:horizon
         R((i-1)*nu+1:i*nu,(i-1)*nu+1:i*nu)=[5 0 0 0 0;
-            0 20 0 0 0;
-            0 0 2 0 0;
+            0 4 1 0 0;
+            0 1 2 0 0;
             0 0 0 2 0;
             0 0 0 0 1];
     end
     R=R+R';
     
     % Quadratic term
-    QA =  R.*10000;%+ Baug'*Qaug*Baug;
+    QA =  R.*10;%+ Baug'*Qaug*Baug;
     % Linear term
     fA = zeros(120,1);%((Aaug*xR(:,1)-xref)'*Qaug*Baug)';
     
@@ -294,13 +294,13 @@ for k = 1:10
 %         
 %         ff = @(x) dist_arm_3D_Heu_hc(x,DH(1:njoint,:),base,obs_arm,robot.cap);
 %         Diff = num_jac(ff,theta); Diff = Diff';
-%          h_Diff=zeros(njoint,1);
-%             for s=1:njoint
-%                 %[theta(1:s-1);x;theta(s+1:end)]???theta???????????????x???
-%                 % ??????????
-%                 [h_Diff(s),~]=derivest(@(x) dist_end_point([theta(1:s-1);x;theta(s+1:end)],DH(1:njoint,:),base,obs_arm,robot.cap),theta(s),'Vectorized','no');
-%                 %[Diff(s),~]=derivest(@(x) dist_arm_3D([theta(1:s-1);x;theta(s+1:end)],DH(1:njoint,:),base,obs,robot.cap),theta(s),'Vectorized','no');
-%             end
+         h_Diff=zeros(njoint,1);
+            for s=1:njoint
+                %[theta(1:s-1);x;theta(s+1:end)]???theta???????????????x???
+                % ??????????
+                [h_Diff(s),~]=derivest(@(x) dist_end_point([theta(1:s-1);x;theta(s+1:end)],DH(1:njoint,:),base,obs_arm,robot.cap),theta(s),'Vectorized','no');
+                %[Diff(s),~]=derivest(@(x) dist_arm_3D([theta(1:s-1);x;theta(s+1:end)],DH(1:njoint,:),base,obs,robot.cap),theta(s),'Vectorized','no');
+            end
 %         
          Bj=Baug((i-1)*nstate+1:i*nstate,1:horizon*nu);
 %         size(uref);
@@ -319,8 +319,8 @@ for k = 1:10
         % hold 
         
         ee_I = [ee_I; h_D-end_dis ];
-        h_ff = @(x) dist_end_point(x,DH(1:njoint,:),base,obs_arm,robot.cap);
-        h_Diff = num_jac(h_ff,theta); h_Diff = h_Diff';
+%         h_ff = @(x) dist_end_point(x,DH(1:njoint,:),base,obs_arm,robot.cap);
+%         h_Diff = num_jac(h_ff,theta); h_Diff = h_Diff';
         
         s=ee_I(i)+h_Diff'*Bj(1:njoint,:)*uref;
         l=h_Diff'*Bj(1:njoint,:);
@@ -350,7 +350,7 @@ for k = 1:10
 % TpA
     % Quadratic term
     Q = blkdiag(QT,0.1*QA);
-    Q = blkdiag(Q,1000*diag(ones(1,nobj*nstep)),1000*diag(ones(1,horizon)));
+    Q = blkdiag(Q,1000*diag(ones(1,nobj*nstep)),1000*diag(ones(1,horizon)),100*diag(ones(1,horizon)));
     % Linear term
     f = [fT' 0.1*fA'  zeros(nobj*nstep+horizon,1)']';
     % inequality 
@@ -390,7 +390,7 @@ for k = 1:10
     x_out = soln(1:2:2*25);
     y_out = soln(2:2:2*25);
     %u_out = soln(2*25+1:3*25);
-    alpha_out = soln(2*25+1:end-(nobj*nstep+horizon));
+    alpha_out = soln(2*25+1:end-(nobj*nstep+horizon*2));
     states_out = Aaug*xR(:,1)+Baug*alpha_out;
     theta_out = [  Ax_current(1)  states_out(1:10:end)';
                    Ax_current(2)  states_out(2:10:end)';
@@ -402,7 +402,7 @@ for k = 1:10
                     
     % Arm u update
     
-    unew = soln((dim)*nstep+1:end-(nobj*nstep+horizon));
+    unew = soln((dim)*nstep+1:end-(nobj*nstep+horizon*2));
     
     oldref=xref;
 %     xref=[];
@@ -604,7 +604,7 @@ end
 
 %%
 figure
-%theta_implement= [theta_implement [zAT' 0]'];
+theta_implement= [theta_implement [zAT' 0]'];
 plot(theta_implement(1,:),'-ko')
 hold on
 plot(theta_implement(2,:),'m-d')
