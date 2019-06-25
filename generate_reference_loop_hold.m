@@ -8,7 +8,7 @@ switch MODE_
     case 1  %approach
         % Arm
         
-        delay = 2;        
+        delay = nstep;  %%%%%%%%%%%%% shold be delay = 2        
         xref_pre = [[linspace(Ax_current(1),zAT(1),delay) zAT(1)*ones(1,nstep-delay)];
                     [linspace(Ax_current(2),zAT(2),delay) zAT(2)*ones(1,nstep-delay)];
                     [linspace(Ax_current(3),zAT(3),delay) zAT(3)*ones(1,nstep-delay)];

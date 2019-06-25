@@ -119,3 +119,6 @@ initialguess = robot.homeConfiguration;
 figure
 [configSoln,solnInfo] = ik('body5',tform,weights,initialguess);
 show(robot,configSoln);
+hold on
+configSoln(2).JointPosition = 1.43;
+show(robot,configSoln);

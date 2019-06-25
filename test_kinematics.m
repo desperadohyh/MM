@@ -43,16 +43,28 @@ Vx = xV;
 [xref_t,xref,xR,refpath]=generate_reference_loop_hold(var,Ax_current,Tx_current,zAT,zT,horizon,nstate,u0,mode_,target,t_marg );
 
 
+figure
+plot(xref(1:10:end),'-ko')
+hold on
+plot(xref(2:10:end),'m-d')
+hold on
+plot(xref(3:10:end),'--x')
+plot(xref(4:10:end),'-r*')
+plot(xref(5:10:end),'-go')
 
+legend('platform angle','\theta_1','\theta_2','\theta_3','\theta_4' ,'location','eastoutside')
+ylabel('Angle[rad]')
+xlabel('Time step')
 
 pos={};
 
 color{1} = '*r-';
-color{2} = '-ko';
+color{2} = '-kx';
 color{3} = 'm-d';
 color{4} = '--x';
 color{5} = '-yo';
 
+figure
 for i=1:horizon
     % provide mode_ according to current 2D path 
     xy = refpath(i*2+1:(i+1)*2);
@@ -67,6 +79,10 @@ for i=1:horizon
     pause
 end
 
+
+xlabel('x[m]')
+ylabel('y[m]')
+zlabel('z[m]')
 
 
 % plot

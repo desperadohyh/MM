@@ -65,8 +65,9 @@ thetas = [angles(numTotalPoints+1:numTotalPoints*2);
 %hold on
 title('Robot waypoint tracking visualization')
 axis([-0.2 0.6 -0.35 0.35 -0.1 0.35]);
-for idx = 1:1%size(eePositions,2)
+for idx = 1:size(eePositions,2)
     show(robot,configSoln(idx,:), 'PreservePlot', false,'Frames','off');
     pause(0.1)
+    hold on
 end
 hold off
