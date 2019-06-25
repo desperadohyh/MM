@@ -2,6 +2,22 @@
 % clear all 
 % close all
 
+%% TB3 model
+
+tb3.base = [0.065 0.065 -0.195 -0.195;
+                0.13  -0.13 -0.13  0.13];
+            
+tb3.wC = [0    0;
+         0.14  -0.14  ;
+         0.05 0.05];   % center of circle 
+R = 0.03 ;    % Radius of circle 
+teta=0:0.5:2*pi ;
+for i = 1:2
+tb3.wx(i,:) = tb3.wC(1,i)+R*cos(teta);
+tb3.wy(i,:) = tb3.wC(2,i)*ones(1,length(teta)) ;
+tb3.wz(i,:) = tb3.wC(3,i)+R*sin(teta) ;
+end
+
 %% Arm
 
 % initial point and goal point
@@ -11,9 +27,9 @@ Ax_current = z0;
 %zT = [0;-pi/2;0;0;0];
 %zAT = [0 ;-pi; pi/2; -pi*0.2314; -pi*0.2655];
 %zAT = [0 ;-pi; pi*0.4386*2/3; -pi*0.2498; -pi*0.0277]; % theta_{1}
-zAT = [0; -pi; 0.8471; -0.2132; 0.8846];
-
-%zAT = [0 ;-pi; pi*0.4386; -pi*0.2498; -pi*0.0277]; % hold ok
+%zAT = [0; -pi; 0.8471; -0.2132; 0.8846];
+%zAT = [0; -pi; 0.1471; -0.2132; 0.8846]; bad
+zAT = [0 ;-pi; pi*0.4386; -pi*0.2498; -pi*0.0277];
 % zT = [-pi/2;-pi/2;0;0;0];
 % zAT = [-pi/2;-pi/2;0;0;0];
 % horizon settings

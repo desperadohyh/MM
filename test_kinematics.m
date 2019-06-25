@@ -27,6 +27,25 @@ nstate      =10; % QP variable dim
 nu          =5; % acceleration dim 
 DH          =robot.DH;
 
+% robot model
+
+tb3.base = [0.065 0.065 -0.195 -0.195;
+                0.13  -0.13 -0.13  0.13];
+            
+tb3.wC = [0    0;
+         0.14  -0.14  ;
+         0.05 0.05];   % center of circle 
+R = 0.03 ;    % Radius of circle 
+teta=0:0.5:2*pi ;
+for i = 1:2
+tb3.wx(i,:) = tb3.wC(1,i)+R*cos(teta);
+tb3.wy(i,:) = tb3.wC(2,i)*ones(1,length(teta)) ;
+tb3.wz(i,:) = tb3.wC(3,i)+R*sin(teta) ;
+end
+
+
+
+
 
 %%
 % Target
@@ -58,31 +77,56 @@ xlabel('Time step')
 
 pos={};
 
-color{1} = '*r-';
+color{1} = 'or-';
 color{2} = '-kx';
 color{3} = 'm-d';
 color{4} = '--x';
 color{5} = '-yo';
 
 figure
-for i=1:horizon
+xlabel('x[m]')
+ylabel('y[m]')
+zlabel('z[m]')
+axis equal
+for i=1:7:horizon
     % provide mode_ according to current 2D path 
     xy = refpath(i*2+1:(i+1)*2);
     base = [xy' 0.1];
     % get reference theta
     theta=xref(nstate*(i-1)+1:nstate*(i-1)+njoint);
-    [end_dis,pos]=plot_link(theta,DH(1:njoint,:),base,obs_arm,robot.cap);
+    [end_dis,pos,M]=plot_link(theta,DH(1:njoint,:),base,obs_arm,robot.cap);
+    disp('........')
+    
+    
+    tb3_base_w = M{2}(1:2,1:2)*tb3.base+base(1:2)';
+    fill3(tb3_base_w(1,:), tb3_base_w(2,:), 0.1*ones(1,4), [0.9-(i/horizon)/1.2,0.9-(i/horizon)/1.2,0.9-(i/horizon)/1.2]);
+    fill3(tb3_base_w(1,:), tb3_base_w(2,:), 0.05*ones(1,4), [0.9-(i/horizon)/1.2,0.9-(i/horizon)/1.2,0.9-(i/horizon)/1.2]);
+    hold on
+    for w = 1:2
+    tb3_w_w = M{2}(1:2,1:2)*[tb3.wx(w,:);tb3.wy(w,:)]+base(1:2)';
+    fill3(tb3_w_w(1,:), tb3_w_w(2,:), tb3.wz(w,:), [0.9-(i/horizon)/1.2,0.9-(i/horizon)/1.2,0.9-(i/horizon)/1.2]);
+    end
+    %     ob = Polyhedron('V',[tb3_base_w]');
+%     PP =ob.plot('color','b','alpha',((i/horizon))/2);
+    
     for j = 1:5
-       etrj = plot3( pos{j}.p(1,3), pos{j}.p(2,3), pos{j}.p(3,3),color{j})
+        if j<5
+             plot3([ pos{j}.p(1,3), pos{j+1}.p(1,3)],[ pos{j}.p(2,3), pos{j+1}.p(2,3)],[ pos{j}.p(3,3), pos{j+1}.p(3,3)],'k-','color',[1-(i/horizon),1-(i/horizon),1-(i/horizon)/1.5],'LineWidth',3);
+        end
+       etrj = plot3( pos{j}.p(1,3), pos{j}.p(2,3), pos{j}.p(3,3),color{1},'color',[1-(i/horizon)/3.5,1-(i/horizon)/2.5,1-(i/horizon)],'LineWidth',3);
+       
+       pos{j}.p(3,3)
        hold on
     end
-    pause
+    xlabel('x[m]')
+    ylabel('y[m]')
+    zlabel('z[m]')
+    axis equal
+   % pause
 end
 
+axis equal
 
-xlabel('x[m]')
-ylabel('y[m]')
-zlabel('z[m]')
 
 
 % plot

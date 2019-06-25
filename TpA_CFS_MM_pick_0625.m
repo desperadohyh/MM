@@ -28,20 +28,11 @@ DH          =robot.DH;
 
 %%
 % Target
-%target = [-0.2; 0; 0.05];
-target = [0.5+dx; 0; 0.05];
+target = [-0.2; 0; 0.05];
 t_marg = [0.35 0.2 0.35 0; 0  0  0  0; 0 0 0 0];
 
-%ss=85;
-ss=65;
+ss=85;
 xV = -0.15;
-
-% new added
-WP_implemented = {};
-
-not_move = kron(Tx_current,ones(1,nstep));
-odom_path_msg = record_im(not_move);
-WP_implemented{end+1} = odom_path_msg;
 
 for steps=1:ss
 %% Mode check and switch
@@ -75,7 +66,7 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
         v_grip = 0.2; %%%%
         
         % fine approach
-        if idx ==2
+        if idx ==1
             rate = 3/2;
         else
             rate = 1;
@@ -90,23 +81,6 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
             traj_implement = [traj_implement X_out(11:12)'];
             pla_implement = [pla_implement [0 0 0]'];
             Dt = [Dt dt*0.2];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
-        end  
-        
-        %% wait
-        for ii =1:g_size
-            theta_implement = [theta_implement [theta_implement(1:2,end); xref_approach(g_size); theta_implement(4:6,end)]];
-            MODE = [MODE mode];
-            end_effector = ee_plot(theta_implement, X_out(6:7),DH);
-            end_implement = [end_implement  end_effector];
-            traj_implement = [traj_implement X_out(11:12)'];
-            pla_implement = [pla_implement [0 0 0]'];
-            Dt = [Dt dt*0.4];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
         end  
         
         % close gripper
@@ -121,9 +95,6 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
             traj_implement = [traj_implement X_out(11:12)'];
             pla_implement = [pla_implement [0 0 0]'];
             Dt = [Dt dt*0.2];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
         end        
         grasp = 1;
         g_current = grip_pub; %%%%%%%%%%%%%%%%
@@ -140,9 +111,6 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
             traj_implement = [traj_implement X_out(11:12)'];
             pla_implement = [pla_implement [0 0 0]'];
             Dt = [Dt dt*0.2];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
 
             %%%% Get effort %%%%%
 %             if j >2 && mode ==3
@@ -164,9 +132,6 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
                      pla_implement = [pla_implement [ 0 0 0]'];
                      MODE = [MODE mode];
                      Dt = [Dt dt*0.2];
-                     not_move = kron(Tx_current,ones(1,nstep));
-                    odom_path_msg = record_im(not_move);
-                    WP_implemented{end+1} = odom_path_msg;
                  end
                 
                  % open gripper
@@ -181,9 +146,6 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
                      traj_implement = [traj_implement X_out(11:12)'];
                      pla_implement = [pla_implement [0 0 0]'];
                      Dt = [Dt dt*0.2];
-                     not_move = kron(Tx_current,ones(1,nstep));
-                    odom_path_msg = record_im(not_move);
-                    WP_implemented{end+1} = odom_path_msg;
                  end        
                  grasp = 0;
                  g_current = grip_pub; %%%%%%%%%%%%%%%%
@@ -195,7 +157,7 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
              xref_lift = theta_{idx};
              t_marg(:,mode) = move_marg(:,idx);
              zAT = [0 ;-pi;theta_{idx}(:,1)];
-             target = [0.5+dx; 0; 0.05];
+             target = [-0.2; 0; 0.05];
              xV = -0.15;                
              grasp = 0;
              %Tx_current =  X_out(6:10)';
@@ -206,7 +168,7 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
              end
              mode = 3;  % Ready to move the object
              %MODE = [MODE mode];
-             target = [1.5+dx; 0; 0.05];
+             target = [1.5; 0; 0.05];
              xV = 0.15;
              zAT(2) = -pi/2; 
          end
@@ -225,12 +187,7 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
             pla_implement = [pla_implement [0 0 0]'];
             MODE = [MODE mode];
             Dt = [Dt dt*0.2];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
         end
-        
-        
         mode = 1;        
         t_marg(:,mode) = move_marg(:,idx);
         
@@ -249,9 +206,6 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
             traj_implement = [traj_implement X_out(11:12)'];
             pla_implement = [pla_implement [0 0 0]'];
             Dt = [Dt dt*0.2];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
         end        
         grasp = 0;
         g_current = grip_pub;
@@ -267,18 +221,15 @@ if norm([Tx_current(1:2);0.05]-(target+t_marg(:,mode)))<0.05
             pla_implement = [pla_implement [0 0 0]'];
             MODE = [MODE mode];
             Dt = [Dt dt*0.2];
-            not_move = kron(Tx_current,ones(1,nstep));
-            odom_path_msg = record_im(not_move);
-            WP_implemented{end+1} = odom_path_msg;
         end
         mode = 4;  % Ready for new task
         zAT = [0;-pi/2;0;0;0];
-        target = [2.5+dx; 0; 0.05];
+        target = [2.5; 0; 0.05];
     
      
     elseif mode == 4  % Start new mission
         mode = 1;
-        target = [0+dx; 0; 0.05];
+        target = [0; 0; 0.05];
         
     end
     
@@ -523,8 +474,8 @@ for k = 1:10
         Diff = num_jac(ff,theta); Diff = Diff';
         
         Bj=Baug((i-1)*nstate+1:i*nstate,1:horizon*nu);
-        s=I(i)+Diff'*Bj(1:njoint,:)*uref;
-        l=Diff'*Bj(1:njoint,:);
+        s=I(i)-Diff'*Bj(1:njoint,:)*uref;
+        l=-Diff'*Bj(1:njoint,:);
         LLA = [LLA;l];
         SSA = [SSA;s];
         % Soft constraint
@@ -719,21 +670,21 @@ pla_implement = [pla_implement X_out(13:15)'];
 MODE = [MODE mode];
 Dt = [Dt dt];
 
-odom_path_msg = record_im(X_out);
-WP_implemented{end+1} = odom_path_msg;
-
 end
 
 
 end
 
 %%
+
 figure(fighandle(1));
+gap = 5;
+plot_implement(length(MODE),theta_implement(1:5,:),traj_implement,robot,tb3,gap)
 ob = Polyhedron('V',obs{1}.poly');
 Obs = ob.plot('color','g');
 hold on
 axis equal
-axis([-0.5+dx 3.5+dx -.6 .5 -0.5 1.2]);
+axis([-0.5 3.5 -.6 .5 -0.5 1.2]);
 r=obs_arm_r;
 [X,Y,Z] = cylinder(r);
 h=mesh(X+obs_c(1),Y+obs_c(2),Z*0.5,'facecolor',[1 0 0]);
@@ -824,19 +775,4 @@ legend('Vel','AngVel','location','best')
 xlabel('Time step')
 
 %%
-theta_implement = theta_implement(2:6,:);
-%%
-split = [];
-
-for sp = 2:size(Dt,2)
-    c=Dt(sp)-Dt(sp-1);
-    if c~=0
-        split = [split sp];
-    end
-end
-split = [1 split size(Dt,2)+1]
-ref.Dt = Dt;
-ref.theta_implement = theta_implement;
-ref.split = split;
-ref.WP_implemented = WP_implemented;
-save('good_data10.mat','ref');
+%theta_implement = theta_implement(2:6,:);

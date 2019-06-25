@@ -97,7 +97,7 @@ end
     R=R+R';
     
     % Quadratic term
-    QA =  R.*10000;%+ Baug'*Qaug*Baug;
+    QA =  R.*100;%+ Baug'*Qaug*Baug;
     % Linear term
     fA = zeros(120,1);%((Aaug*xR(:,1)-xref)'*Qaug*Baug)';
     
@@ -530,9 +530,10 @@ MODE = [MODE mode_];
 Dt = [Dt dt];
 
 end
-
-
-
+%%
+figure
+gap = 2;
+plot_implement(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap)
 
 %%
 figure(fighandle(1));

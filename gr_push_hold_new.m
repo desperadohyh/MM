@@ -18,14 +18,19 @@ tb3.wy(i,:) = tb3.wC(2,i)*ones(1,length(teta)) ;
 tb3.wz(i,:) = tb3.wC(3,i)+R*sin(teta) ;
 end
 
+
 %% Arm
 
 % initial point and goal point
-z0 = [0;-pi/2;0;0;0];
-Ax_current = [0;-pi/2;0;0;0];
+%z0 = [0;-pi/2;0;0;0];
+z0 = [0 ;-pi; pi*0.4386; -pi*0.2498; -pi*0.0277];
+Ax_current = z0;
 %zT = [0;-pi/2;0;0;0];
 %zAT = [0 ;-pi; pi/2; -pi*0.2314; -pi*0.2655];
-zAT = [0 ;-pi; pi*0.4386*2/3; -pi*0.2498; -pi*0.0277];
+%zAT = [0 ;-pi; pi*0.4386*2/3; -pi*0.2498; -pi*0.0277]; % theta_{1}
+zAT = [0; -pi; 0.8471; -0.2132; 0.8846];
+
+%zAT = [0 ;-pi; pi*0.4386; -pi*0.2498; -pi*0.0277]; % hold ok
 % zT = [-pi/2;-pi/2;0;0;0];
 % zAT = [-pi/2;-pi/2;0;0;0];
 % horizon settings
@@ -64,7 +69,8 @@ x0 = 2.5;
 y0 = 0;
 z0 = [x0;y0];
 Tx_current = [[x0;y0];0;0;0];
-zT = [2;0];
+zT = [2.5-0.12;0];
+%zT = [2.5-0.12;0];
 % horizon settings
 vision = 2;
 
@@ -118,11 +124,12 @@ th_size = size(theta_{2},2);
 effort_p = [ 400 500 600 700 900 900]; %%%%%%%%%%
 
 %% OBS
-obs_c = [1.1;-0.2];
+obs_c = [1.1;-0.9];
 width = [0.4 0.8]/2;
 hight = 0.6/2;
 % Arm obs
-obs_arm     =[[obs_c;-0.1 ] [obs_c;0.5]];
+%obs_arm     =[[obs_c;-0.1 ] [obs_c;0.5]];
+obs_arm     =[[1.9827;-0.0006;-0.0111 ] [1.9863;-0.0006;-0.0025]];
 obs_arm_r   = 0.2; % radius
 % TB: obstacle
 nobj        = 1;
@@ -144,8 +151,11 @@ xV = -0.15;
 
 %% Initializa conditions
 pass = 0;
-mode = 1;
+mode_ = 1;
 MODE = [];
 effort = 5;
 idx = 1;
 Dt = [];
+ee_I =[];
+h_D = 0.01;
+Link = [];
