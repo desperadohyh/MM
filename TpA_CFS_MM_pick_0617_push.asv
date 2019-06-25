@@ -532,7 +532,7 @@ Dt = [Dt dt];
 end
 %%
 figure
-gap = 5;
+gap = 7;
 plot_implement(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap)
 
 %%
