@@ -1,0 +1,9 @@
+LIBRARY testMEX_mex.mexw64
+EXPORTS
+mexFunction
+mexfilerequiredapiversion
+emlrtMexFcnProperties
+testMEX
+testMEX_initialize
+testMEX_terminate
+testMEX_atexit
