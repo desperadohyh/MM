@@ -35,10 +35,12 @@ for i=1:gap:ss
        etrj = plot3( pos{j}.p(1,3), pos{j}.p(2,3), pos{j}.p(3,3),'o-','color',[1-(i/ss)/3.5,1-(i/ss)/2.5,1-(i/ss)],'LineWidth',3);
        hold on
     end   
+    pause
 end
 
 xlabel('x[m]')
 ylabel('y[m]')
 zlabel('z[m]')
 axis equal
+
 end

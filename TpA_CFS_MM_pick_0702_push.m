@@ -1,6 +1,6 @@
 clc
 clear all
-close all
+%close all
 fighandle = [];
 fighandle(1) = figure(1); hold on;
 set(gcf, 'position', [0 0 500 500]);
@@ -15,7 +15,7 @@ dt          = 0.5;
 % TB: trajectory dimension
 dim         = 2; %x,y
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-gr_push_hold
+gr_push_hold_0702
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Arm parameters
 robot=robotproperty_hc(4);
@@ -28,11 +28,11 @@ DH          =robot.DH;
 
 %%
 % Target
-target = [-0.2; 0; 0.05];
+target = [0.2; 0; 0.05];
 t_marg = [0.35 0.2 0.35 0; 0  0  0  0; 0 0 0 0];
 
 ss=20;
-xV = -0.15;
+xV = 0.15;
 Vx = xV;
 
 for steps=1:ss
@@ -97,7 +97,7 @@ end
     R=R+R';
     
     % Quadratic term
-    QA =  R.*10000;%+ Baug'*Qaug*Baug;
+    QA =  R.*100;%+ Baug'*Qaug*Baug;
     % Linear term
     fA = zeros(120,1);%((Aaug*xR(:,1)-xref)'*Qaug*Baug)';
     
@@ -328,7 +328,9 @@ for k = 1:10
         SSA = [SSA;s];
         % Soft constraint
         LA=[LA; [zeros(1,nstep*2) l zeros(1,nstep*nobj) zeros(1,horizon)]];% zeros(1,i-1) -1 zeros(1,horizon-i)]];
-        SA=[SA;s];  
+        SA=[SA;s]; 
+%         LA=[LA; [zeros(1,nstep*2) zeros(1,120) zeros(1,nstep*nobj) zeros(1,horizon)]];% zeros(1,i-1) -1 zeros(1,horizon-i)]];
+%         SA=[SA;1];  
          
 %         LA = [LA;[zeros(1,nstep*2) zeros(1,horizon*5)  zeros(1,horizon) zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i)]];
 %         SA = [SA;0];
@@ -336,9 +338,11 @@ for k = 1:10
         
         s=h_D+end_dis-h_Diff'*Bj(1:njoint,:)*uref;
         l=-h_Diff'*Bj(1:njoint,:);
+         LA=[LA; [zeros(1,nstep*2) l zeros(1,nstep*nobj) zeros(1,horizon)]]; % zeros(1,i-1) -1 zeros(1,horizon-i)]];
+         SA=[SA;s];  
         
-        LA=[LA; [zeros(1,nstep*2) l zeros(1,nstep*nobj) zeros(1,horizon)]]; % zeros(1,i-1) -1 zeros(1,horizon-i)]];
-        SA=[SA;s];  
+%         LA=[LA; [zeros(1,nstep*2) zeros(1,120) zeros(1,nstep*nobj) zeros(1,horizon)]]; % zeros(1,i-1) -1 zeros(1,horizon-i)]];
+%         SA=[SA;0];  
          
 %         LA = [LA;[zeros(1,nstep*2) zeros(1,horizon*5)  zeros(1,horizon) zeros(1,nstep*nobj) zeros(1,i-1) -1 zeros(1,horizon-i)]];
 %         SA = [SA;0];
@@ -533,7 +537,7 @@ Dt = [Dt dt];
 end
 %%
 figure
-gap = 1;
+gap = 5;
 plot_implement(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap)
 
 %%

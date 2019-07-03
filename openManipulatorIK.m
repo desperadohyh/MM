@@ -15,7 +15,14 @@ axes = show(robot);
 axes.CameraPositionMode = 'auto';
 
 %% Create a set of desired wayPoints
-wayPoints = [0.35 0 -0.05; 0.27 0 0.1; 0.1 0 0.2];
+t = 0:pi*0.4/10:pi*0.4;
+x_f = 0:0.6/10:0.6;
+x_c = 0.45*sin(t)+0.4 - x_f;
+y_c = 0.45*(1-cos(t));
+z_c = 0.1*ones(1,size(x_c,2));
+wayPoints =[x_c' y_c' z_c'];
+%wayPoints = [0.35 0 -0.05; 0.27 0 0.1; 0.1 0 0.2];
+
 % wayPoints = [0.2 -0.2 0.02;0.25 0 0.15; 0.2 0.2 0.02]; % Alternate set of wayPoints
 %wayPoints = [0.2 -0.2 0.02;0.15 0 0.28;0.15 0.05 0.2; 0.15 0.09 0.15;0.1 0.12 0.1; 0.04 0.1 0.2;0.25 0 0.15; 0.2 0.2 0.02];
 exampleHelperPlotWaypoints(wayPoints);
@@ -46,7 +53,7 @@ eePositions = ppval(trajectory,linspace(0,trajectory.breaks(end),numTotalPoints)
 % previous configuration as initial guess
 for idx = 1:size(eePositions,2)
     tform = trvec2tform(eePositions(:,idx)');
-    th = (numTotalPoints-idx)*pi/180;
+    th = 0;%(numTotalPoints-idx)*pi/180;
     tform(1:3,1:3) = [cos(th) 0 sin(th);
                        0      1   0    ;
                      -sin(th) 0 cos(th)];
@@ -71,3 +78,20 @@ for idx = 1:size(eePositions,2)
     hold on
 end
 hold off
+
+%%
+% sampling time
+dt          = 0.5;
+
+% TB: trajectory dimension
+dim         = 2; %x,y
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+gr_push_hold
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Arm parameters
+robot1=robotproperty_hc(4);
+nn = size(thetas,2);
+x_f = 0:0.6/(nn-1):0.6;
+figure
+gap = 7;
+plot_implement(nn,[zeros(1,nn); angles(1:numTotalPoints);thetas],[x_f; zeros(1,nn)],robot1,tb3,gap)

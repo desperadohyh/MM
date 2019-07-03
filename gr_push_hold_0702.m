@@ -22,14 +22,16 @@ end
 
 % initial point and goal point
 %z0 = [0;-pi/2;0;0;0];
-z0 = [0 ;-pi; pi*0.4386; -pi*0.2498; -pi*0.0277];
+tile = 0.3386;
+z0 = [0 ;0; pi*tile; -pi*tile; 0];
 Ax_current = z0;
 %zT = [0;-pi/2;0;0;0];
 %zAT = [0 ;-pi; pi/2; -pi*0.2314; -pi*0.2655];
 %zAT = [0 ;-pi; pi*0.4386*2/3; -pi*0.2498; -pi*0.0277]; % theta_{1}
 %zAT = [0; -pi; 0.8471; -0.2132; 0.8846];
 %zAT = [0; -pi; 0.1471; -0.2132; 0.8846]; bad
-zAT = [0 ;-pi; pi*0.4386; -pi*0.2498; -pi*0.0277];
+%zAT = [0 ;-pi; pi*0.4386; -pi*0.2498; -pi*0.0277];
+zAT = [0 ;0; pi*tile; -pi*tile; 0];
 % zT = [-pi/2;-pi/2;0;0;0];
 % zAT = [-pi/2;-pi/2;0;0;0];
 % horizon settings
@@ -64,11 +66,11 @@ uref = zeros(horizon*5,1);
 % z0 = [x0;y0];
 % zT = [1.3;0.1];
 
-x0 = 2.5;
+x0 = 0;
 y0 = 0;
 z0 = [x0;y0];
 Tx_current = [[x0;y0];0;0;0];
-zT = [2.5-0.12;0];
+zT = [0+0.12;0];
 %zT = [2.5-0.12;0];
 % horizon settings
 vision = 2;
@@ -128,8 +130,7 @@ width = [0.4 0.8]/2;
 hight = 0.6/2;
 % Arm obs
 %obs_arm     =[[obs_c;-0.1 ] [obs_c;0.5]];
-%obs_arm     =[[1.9827;-0.0006;-0.0111 ] [1.9863;-0.0006;-0.0025]];%good
-obs_arm     =[[2;-0.0006;0.0211 ] [2;-0.0006;0.0211]];%good
+obs_arm     =[[0.2406;0.0000;0.1320 ] [0.2406;0.0006;0.1320]];
 obs_arm_r   = 0.2; % radius
 % TB: obstacle
 nobj        = 1;
@@ -147,7 +148,7 @@ target = [-0.2; 0; 0.05];
 t_marg = [0.35 0.2 0.35 0; 0  0  0  0; 0 0 0 0];
 
 ss=85;
-xV = -0.15;
+xV = 0.15;
 
 %% Initializa conditions
 pass = 0;
