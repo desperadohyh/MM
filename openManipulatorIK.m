@@ -15,10 +15,19 @@ axes = show(robot);
 axes.CameraPositionMode = 'auto';
 
 %% Create a set of desired wayPoints
-t = 0:pi*0.4/10:pi*0.4;
-x_f = 0:0.6/10:0.6;
-x_c = 0.45*sin(t)+0.4 - x_f;
-y_c = 0.45*(1-cos(t));
+%door
+range = [0  pi*0.4];
+dt = 0.2;
+w = pi*0.4/4;
+t = range(1):w*dt:range(end);
+r = 0.4;
+c = [0; r];
+% base
+range_b = [0  0.7];
+base_move = range_b(2)-range_b(1);
+x_f = range_b(1):base_move/(length(t)-1):range_b(end);
+x_c = r*sin(t)+0.3 - x_f;
+y_c = r*(1-cos(t));
 z_c = 0.1*ones(1,size(x_c,2));
 wayPoints =[x_c' y_c' z_c'];
 %wayPoints = [0.35 0 -0.05; 0.27 0 0.1; 0.1 0 0.2];
@@ -91,7 +100,7 @@ gr_push_hold
 % Arm parameters
 robot1=robotproperty_hc(4);
 nn = size(thetas,2);
-x_f = 0:0.6/(nn-1):0.6;
+x_f = -0.15:0.7/(nn-1):0.55;
 figure
 gap = 7;
 plot_implement(nn,[zeros(1,nn); angles(1:numTotalPoints);thetas],[x_f; zeros(1,nn)],robot1,tb3,gap)

@@ -34,7 +34,11 @@ for i=1:gap:ss
         end
        etrj = plot3( pos{j}.p(1,3), pos{j}.p(2,3), pos{j}.p(3,3),'o-','color',[1-(i/ss)/3.5,1-(i/ss)/2.5,1-(i/ss)],'LineWidth',3);
        hold on
-    end   
+    end
+    
+    % plot door
+    line = pos{end+1}.p(1:2,3)*0.8/norm(pos{end+1}.p(1:2,3));
+    door = []
     pause
 end
 
