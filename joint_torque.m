@@ -50,7 +50,7 @@ robot.z0_ = zeros(19,1);
 robot.nTherta = 6;
 
 %%
-joint_torque1(robot,obs_arm);
+[d, linkid, A_tau, b_tau, robot] = joint_torque1(robot,obs_arm);
 
 
 

@@ -4,7 +4,7 @@ pos={};
 
 %% Plot
 
-for i=1:gap:ss
+for i=2:gap:ss
     % get bace position    
     base = [traj_implement(:,i); 0.1];
     % get reference theta
@@ -37,8 +37,13 @@ for i=1:gap:ss
     end
     
     % plot door
-    line = pos{end+1}.p(1:2,3)*0.8/norm(pos{end+1}.p(1:2,3));
-    door = []
+    c = [0;0.4];
+    norm((pos{6}.p(1:2,3)-c))
+    line = (pos{6}.p(1:2,3)-c)*0.8/norm((pos{6}.p(1:2,3)-c));
+    door = [line line zeros(2,2); 0.4 0 0 0.4]+[0;0.4;0];
+    fill3(door(1,:), door(2,:), door(3,:), ...
+        [0.9-(i/ss)/1.2,0.9-(i/ss)/1.2,0.9-(i/ss)/1.2]);
+    
     pause
 end
 

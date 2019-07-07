@@ -6,7 +6,8 @@
 % Copyright 2017-2018 The MathWorks, Inc.
 
 %% Load and display robot
-clear
+clear all
+close all
 clc
 
 addpath(genpath(strcat(pwd,'\Dependencies')))
@@ -16,17 +17,17 @@ axes.CameraPositionMode = 'auto';
 
 %% Create a set of desired wayPoints
 %door
-range = [0  pi*0.4];
+range = [0  pi*0.45];
 dt = 0.2;
 w = pi*0.4/4;
 t = range(1):w*dt:range(end);
 r = 0.4;
 c = [0; r];
 % base
-range_b = [0  0.7];
+range_b = [0  0.60];
 base_move = range_b(2)-range_b(1);
 x_f = range_b(1):base_move/(length(t)-1):range_b(end);
-x_c = r*sin(t)+0.3 - x_f;
+x_c = r*sin(t)+0.4 - x_f;
 y_c = r*(1-cos(t));
 z_c = 0.1*ones(1,size(x_c,2));
 wayPoints =[x_c' y_c' z_c'];
@@ -100,7 +101,10 @@ gr_push_hold
 % Arm parameters
 robot1=robotproperty_hc(4);
 nn = size(thetas,2);
-x_f = -0.15:0.7/(nn-1):0.55;
+x_f = -0.20:0.60/(nn-1):0.40;
 figure
-gap = 7;
+gap = 5;
 plot_implement(nn,[zeros(1,nn); angles(1:numTotalPoints);thetas],[x_f; zeros(1,nn)],robot1,tb3,gap)
+
+theta_open = [zeros(1,nn); angles(1:numTotalPoints);thetas];
+traj_open = [x_f; zeros(1,nn)];
