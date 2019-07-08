@@ -1,3 +1,8 @@
+
+
+
+
+
 close all 
 clear all
 %% Door simulation

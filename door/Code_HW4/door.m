@@ -123,3 +123,13 @@ if FLAG_FORGETTING_FACTOR
     figure, plot(lambda.time, lambda.signals.values); 
     title('forgetting factor \lambda');
 end
+%%
+figure, plot(theta.time, prob_c.signals.values); title('evolution of c_k');
+axis([0 5 -0.5 1.5]); grid on;
+xlabel('Time [s]')
+
+figure, plot(y.time, y.signals.values); title('output angle');
+axis([0 5 -0.1 2]); grid on;
+ylabel('Angle [rad]')
+xlabel('Time [s]')
+
