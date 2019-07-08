@@ -24,13 +24,26 @@ A = [ 0            1;
 
 b = [ 0;
      1/M];
+ 
+
+
 % adaptive loop
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if t_now<6
+    
+    
+    
+    
 ode = @(t,z) door_ode(t,z,F,A,b);
 [t,z] = ode45(ode, tspan, z0);
 
-if 
+if z(1,2)>1.2 && z_stop == false
+    z_stop_th = z(1,2);
+    z_stop = true;
+end
+if z_stop == true
+    z = [ones(size(z,1),1)*z_stop_th zeros(size(z,1),1)];
+end
 
 t_now = t(2);
 end
