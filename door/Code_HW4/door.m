@@ -124,7 +124,7 @@ if FLAG_FORGETTING_FACTOR
     title('forgetting factor \lambda');
 end
 %%
-figure, plot(theta.time, prob_c.signals.values); title('evolution of c_k');
+figure, plot(theta.time, prob_c.signals.values); title('evolution of p(c_k|z_k,s^\hat_k');
 axis([0 5 -0.5 1.5]); grid on;
 xlabel('Time [s]')
 

@@ -1,4 +1,4 @@
-function plot_implement(ss,theta_implement,traj_implement,robot,tb3,gap)
+function plot_implement(ss,theta_implement,traj_implement,robot,tb3,gap,door)
 pos={};
 plotbase2=[];
 plotbase1=[];
@@ -48,6 +48,8 @@ for i=2:gap:ss
     end
     
     % plot door
+    if door ==0
+        continue
     c = [0;0.4];
     norm((pos{6}.p(1:2,3)-c))
     line = (pos{6}.p(1:2,3)-c)*0.8/norm((pos{6}.p(1:2,3)-c));
@@ -60,6 +62,7 @@ for i=2:gap:ss
     axis equal
     axis([-0.5 0.7 -0.3 0.5 0 0.4])
     pause
+    end
 end
 
 xlabel('x[m]')

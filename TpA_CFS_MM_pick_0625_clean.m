@@ -679,7 +679,7 @@ end
 
 figure(fighandle(1));
 gap = 5;
-plot_implement(length(MODE),theta_implement(1:5,:),traj_implement,robot,tb3,gap)
+plot_implement(length(MODE),theta_implement(1:5,:),traj_implement,robot,tb3,gap,0)
 ob = Polyhedron('V',obs{1}.poly');
 Obs = ob.plot('color','g');
 hold on
