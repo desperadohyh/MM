@@ -57,6 +57,7 @@ FLAG_INPUT_SIGNAL = input(' ');
 if isempty(FLAG_INPUT_SIGNAL)
     FLAG_INPUT_SIGNAL = 0;
 end
+ FLAG_INPUT_SIGNAL = 0; %%%%%%%%%
 disp('SELECT PAA ALGORITHM TYPE:')
 disp('0 (default) ---- series-parallel')
 disp('1           ---- parallel')
@@ -115,6 +116,7 @@ t_AdapOn    = 0; % set the time when the adaptation algs are turned on
 t_AdapOff   = t_sim+1; % set the time when the adaptation algs are turned off
 
 sim(simuName);
+%% plot
 figure, plot(yhat.time, y.signals.values - yhat.signals.values);
 title('posterior error'); grid on;
 figure, plot(theta.time, theta.signals.values); title('evolution of \theta');
