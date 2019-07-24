@@ -44,20 +44,8 @@ y.signals.values=1;
 y.signals.dimensions=1;
 load('save_th.mat')
 %%
+FLAG_INPUT_SIGNAL = 0;
 
-
-disp('SELECT TEST INPUT SIGNAL OPTIONS:')
-disp('0 (default) ---- step input signal')
-disp('1           ---- sinusoidal signal with a single frequency')
-disp('2           ---- sinusoidal signal with two frequencies')
-disp('3           ---- white nosie')
-disp('   ')
-disp('Press ENTER for default selection.')
-FLAG_INPUT_SIGNAL = input(' ');
-if isempty(FLAG_INPUT_SIGNAL)
-    FLAG_INPUT_SIGNAL = 0;
-end
- FLAG_INPUT_SIGNAL = 0; %%%%%%%%%
 disp('SELECT PAA ALGORITHM TYPE:')
 disp('0 (default) ---- series-parallel')
 disp('1           ---- parallel')
@@ -108,7 +96,7 @@ end
 plant_denominator_spr_parallel = [1, -0.1, 0.64];
 plant_denominator_nspr_parallel = [1, -1.6, 0.64];
 %%
-simuName    = 'DOOR';
+simuName    = 'DOOR_once';
 %% run the algorithms
 Ts          = 0.01; % you are free to set the sampling time as you wish
 t_sim       = 4; % total simulation time. Again, set it as you wish.
@@ -117,7 +105,7 @@ t_AdapOff   = t_sim+1; % set the time when the adaptation algs are turned off
 
 sim(simuName);
 %% plot
-figure, plot(yhat.time, y.signals.values - yhat.signals.values);
+figure, plot(yhat.time, y.signals.values - yhat.signals.values,'r*');
 title('posterior error'); grid on;
 figure, plot(theta.time, theta.signals.values); title('evolution of \theta');
 legend('a1', 'a2', 'b0', 'b1'); grid on;

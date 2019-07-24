@@ -17,7 +17,7 @@ Thref = [ 0 0  -pi/2 0 0 0   0 0 0 0]';
 
 ang = Ts*H*norm(Vref)*2*pi/0.215;
 ang_v = norm(Vref)*2*pi/0.215;
-zT = [z0_(1)+1 0 Vref' norm(Vref)  0 0 z0_(8)+ang ang_v z0_(10)+ang  ang_v -pi/2 0 0 0   0 0 0 0];
+zT = [z0_(1)+1 0 Vref' norm(Vref)  0 0 z0_(8)+ang ang_v z0_(10)+ang  ang_v 0 0 0 0   0 0 0 0];
 nstate = size(z0_,1); % QP variable dim
 
 xref_pre =[];

@@ -56,6 +56,8 @@ robot.nTherta = 6;
 
 
 function [d, linkid, A_tau, b_tau, robot] = joint_torque1(robot,obs_arm)
+% xA, yA, xAd, yAd, v,   t1, t1d, tR, tRd, tL,  
+% tLd, t2, t2d, t3, t3d,   t4, t4d,t5,t5d 
 
 g = 9.81;
 cap = robot.cap;
