@@ -25,7 +25,7 @@ r           = robot.r;
 d           = robot.d;
 % Arm obs
 % center position (1.05,-0.2)
-obs_arm     =[[1.05;-0.2;0.35] [1.05;-0.2;0.5]];
+obs_arm     =[[1.05;-0.6;0.35] [1.05;-0.6;0.5]];
 obs_arm_r   = 0.35; % radius
 ss=50;
 
