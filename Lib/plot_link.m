@@ -14,7 +14,7 @@ end
 % Ulternative for CapPos
 
 RoCap = cap;
-nlink=size(theta,1);
+nlink=size(theta,1)
 pos=cell(1,nlink);
 M=cell(1,nlink+1); M{1}=eye(4);
 for i=2:nlink+1

@@ -538,7 +538,7 @@ end
 %%
 figure
 gap = 5;
-plot_implement(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap)
+plot_implement(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0)
 
 %%
 figure(fighandle(1));

@@ -227,9 +227,7 @@ z0_ = states_out(nstate+1:nstate*2);
 Tx_current =  X_out(6:10)';
 Ax_current =  theta_out(:,2);
 
-g_current = 0; %%%%%%%%%%%%%
-
-theta_implement = [theta_implement [Ax_current; g_current]];
+theta_implement = [theta_implement Ax_current];
 end_implement = [end_implement  end_effector(:,2)];
 traj_implement = [traj_implement X_out(6:7)'];
 pla_implement = [pla_implement X_out(13:15)'];
@@ -248,10 +246,6 @@ hold on
 %end
 
 end
-%%
-figure
-gap = 5;
-plot_implement(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0)
 
 %%
 figure(fighandle(1));
