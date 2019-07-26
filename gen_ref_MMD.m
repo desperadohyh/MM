@@ -11,13 +11,13 @@ nstep = H+1;
 nu = 6; % acceleration dim
 %z0_ = [0 0 0 0 0  0 0 0 0 0  0 0 0 -pi/2 0   pi/3 0 pi/4 0 ]';
 z0_ = [0 0 0 0 0  0 0 0 0 0  0 -pi/2 0 0 0   0 0 0 0 ]';
-Vref = [0.2; 0];
+Vref = [0.1; 0];
 Thref = [ 0 0  -pi/2 0 0 0   0 0 0 0]';
 
-
-ang = Ts*H*norm(Vref)*2*pi/0.215;
-ang_v = norm(Vref)*2*pi/0.215;
-zT = [z0_(1)+1 0 Vref' norm(Vref)  0 0 z0_(8)+ang ang_v z0_(10)+ang  ang_v 0 0 0 0   0 0 0 0];
+r = 0.0215;
+ang = Ts*H*norm(Vref)/r;
+ang_v = norm(Vref)/r;
+zT = [z0_(1)+Ts*H*Vref(1) 0 Vref' norm(Vref)  0 0 z0_(8)+ang ang_v z0_(10)+ang  ang_v 0 0 0 0   0 0 0 0];
 nstate = size(z0_,1); % QP variable dim
 
 xref_pre =[];
@@ -32,7 +32,9 @@ for i=1:nstep
 end
 uref = zeros(H*nu,1);
 
-
+var.H = H;
+var.Vref = Vref;
+var.r = r;
 
 %% Init
 pathall =[];
@@ -41,6 +43,7 @@ theta_implement =[];
 traj_implement = [];
 end_implement = [];
 pla_implement = [];
+all_implement = [];
 
 
 %% ILQR
@@ -62,7 +65,7 @@ xref_ = [xref_pre(1:2,1:NILQR); zeros(3,NILQR)];
 
 %% Cost
 
-R = blkdiag(eye(2),eye(4));
+R = blkdiag(eye(2),eye(4))*0.1;
 Q2 = [5 0 ;
       0 1 ];
   
@@ -93,7 +96,7 @@ Aug = diag([ones(1,H-1) 10]);
 
 Raug = kron(Aug, R);
 Q2aug = kron(Aug, Q2);
-Q3aug = kron(Aug, Q3);
+Q3aug = kron(Aug, Q3*100000);
 
 vref = kron(ones(H,1),Vref);
 thref = kron(ones(H,1),Thref);

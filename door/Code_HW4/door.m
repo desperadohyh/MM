@@ -18,6 +18,7 @@ close all;
 %%
 SW_PAA_ON         = 1;
 %%
+Gain_ =-1
 
 % parameters
 m = 1;
@@ -28,8 +29,14 @@ Izz = m*((2*l1)^2+d^2)/12;
 K = 4.16*l1;
 B = 6.25*l1;
 
+
 M = (m*l1^2 + Izz)/lc;
 F = 1.9;
+
+% process model
+Init_ck = [0.9 0.1];
+Gpm = [0.9 0.1;
+    0.05 0.95]; 
 
 % continuous time model
 h = tf(1,[M B K]);
@@ -96,7 +103,7 @@ end
 plant_denominator_spr_parallel = [1, -0.1, 0.64];
 plant_denominator_nspr_parallel = [1, -1.6, 0.64];
 %%
-simuName    = 'DOOR_once';
+simuName    = 'DOOR_prob_done';
 %% run the algorithms
 Ts          = 0.01; % you are free to set the sampling time as you wish
 t_sim       = 4; % total simulation time. Again, set it as you wish.
@@ -114,7 +121,7 @@ if FLAG_FORGETTING_FACTOR
     title('forgetting factor \lambda');
 end
 %%
-figure, plot(theta.time, prob_c.signals.values); title('evolution of p(c_k|z_k,s^\hat_k');
+figure, plot(theta.time, b_c.signals.values); title('evolution of p(c_k|z_k,s^\hat_k');
 axis([0 5 -0.5 1.5]); grid on;
 xlabel('Time [s]')
 

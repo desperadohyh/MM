@@ -2,10 +2,17 @@ function [xref_t,xori,xref,xref_pre,xR, A, B ]=gen_loop_MMD(var,z0_,zT,horizon )
 
 nstep = horizon+1;
 nstate = size(z0_,1);
+Ts = var.dt;
+H = var.H;
+Vref = var.Vref;
+r = var.r;
 delay = 2;
 %% Arm
 % Generate reference
 xref_pre =[];
+ang = Ts*H*norm(Vref)/r;
+ang_v = norm(Vref)/r;
+zT = [z0_(1)+Ts*H*Vref(1) 0 Vref' norm(Vref)  0 0 z0_(8)+ang ang_v z0_(10)+ang  ang_v 0 0 0 0   0 0 0 0];
 for i = 1:nstate
     xref_pre = [xref_pre; [linspace(z0_(i),zT(i),delay) zT(i)*ones(1,nstep-delay)]];
 end  

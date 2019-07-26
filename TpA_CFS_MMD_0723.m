@@ -27,7 +27,7 @@ d           = robot.d;
 % center position (1.05,-0.2)
 obs_arm     =[[1.05;-0.6;0.35] [1.05;-0.6;0.5]];
 obs_arm_r   = 0.35; % radius
-ss=50;
+ss=1;
 
 
 %%
@@ -43,14 +43,14 @@ for steps=1:ss
 %     
     % Cost Fn Parameters
     Aaug=[kron(ones(H,1),robot.A)];Baug=kron(tril(ones(H)),robot.B);
-    U0 = zeros(6,1);
+    
     for i=1:H-1
-              
+        U0_i = uref((i-1)*nu+1:i*nu);    
         Aaug = blkdiag(eye(nstate*i),kron(eye(H-i),robot.A))*Aaug;
         for j=1:i
             Baug(:,(j-1)*nu+1:j*nu)=blkdiag(eye(nstate*i),kron(eye(H-i),robot.A))*Baug(:,(j-1)*nu+1:j*nu);
         end
-        [Z1, robot.A, robot.B ] = LinKin(xref(nstate*(i-1)+1:nstate*i), U0, var.dt);
+        [Z1, robot.A, robot.B ] = LinKin(xref(nstate*(i-1)+1:nstate*i), U0_i, var.dt);
     end
     
     
@@ -64,57 +64,65 @@ tic
         
 
 for k = 1:10
-%% The constraint
-    D=obs_arm_r;
-    LA=[];SA=[];
-    LLA=[];
-    SSA=[];
-    I=[];
-    rec_d = [];
-    for i=1:H
-        % provide base according to current 2D path 
-        xy = xref(i*nstate+1:i*nstate+2);
-        base = [xy' 0.1];
-        % get reference theta
-        theta=[xref_pre(6,i+1) xref_pre(12:2:18,i+1)']';
-        [distance,linkid]=dist_arm_3D_Heu_hc(theta,DH(1:njoint,:),base,obs_arm,robot.cap);
-        rec_d = [rec_d distance];
-        
-        I = [I;distance-D];
-        ff = @(x) dist_arm_3D_Heu_hc(x,DH(1:njoint,:),base,obs_arm,robot.cap);
-        Diff = num_jac(ff,theta); Diff = Diff';
-        
-        Bj=Baug((i-1)*nstate+1:i*nstate,1:H*nu);
-        s=I(i)-Diff'*Bj(1:njoint,:)*uref;
-        l=-Diff'*Bj(1:njoint,:);
-        %ll = reshape(l,[5,H]);
-        lL = [];
-        for i_re = 1:H
-            lL = [lL l((i_re-1)*5+1)*(r/d) -l((i_re-1)*5+1)*(r/d) l((i_re-1)*5+2:i_re*5)];
-        end
-        LLA = [LLA;lL];
-        SSA = [SSA;s];
-        
-%         LA=[LA;  lL  ];
-%         SA=[SA;s];
-        
-         % Soft constraint
-        LA=[LA; [ lL  zeros(1,i-1) -1 zeros(1,H-i)]];
-        SA=[SA;s];
-        LA = [LA;[ zeros(1,H*6)  zeros(1,i-1) -1 zeros(1,H-i)]];
-        SA = [SA;0];
-    end
+% %% The constraint
+%     D=obs_arm_r;
+%     LA=[];SA=[];
+%     LLA=[];
+%     SSA=[];
+%     I=[];
+%     rec_d = [];
+%     for i=1:H
+%         % provide base according to current 2D path 
+%         xy = xref(i*nstate+1:i*nstate+2);
+%         base = [xy' 0.1];
+%         % get reference theta
+%         theta=[xref_pre(6,i+1) xref_pre(12:2:18,i+1)']';
+%         [distance,linkid]=dist_arm_3D_Heu_hc(theta,DH(1:njoint,:),base,obs_arm,robot.cap);
+%         rec_d = [rec_d distance];
+%         
+%         I = [I;distance-D];
+%         ff = @(x) dist_arm_3D_Heu_hc(x,DH(1:njoint,:),base,obs_arm,robot.cap);
+%         Diff = num_jac(ff,theta); Diff = Diff';
+%         
+%         Bj=Baug((i-1)*nstate+1:i*nstate,1:H*nu);
+%         s=I(i)-Diff'*Bj(1:njoint,:)*uref;
+%         l=-Diff'*Bj(1:njoint,:);
+%         %ll = reshape(l,[5,H]);
+%         lL = [];
+%         for i_re = 1:H
+%             lL = [lL l((i_re-1)*5+1)*(r/d) -l((i_re-1)*5+1)*(r/d) l((i_re-1)*5+2:i_re*5)];
+%         end
+%         LLA = [LLA;lL];
+%         SSA = [SSA;s];
+%         
+%         
+% %         LA=[LA;  lL  ];
+% %         SA=[SA;s];
+%         
+%          % Soft constraint
+% %         LA=[LA; [ lL  zeros(1,i-1) -1 zeros(1,H-i)]];
+% %         SA=[SA;s];
+% %         LA = [LA;[ zeros(1,H*6)  zeros(1,i-1) -1 zeros(1,H-i)]];
+% %         SA = [SA;0];
+%     end
+    %% acceleration limit
+    LA = eye(H*nu);
+    acc_lim = 2*[pi/2 pi/2 pi/10 pi/10 pi/5 pi/5]';
+    SA = kron(ones(H,1),acc_lim);
 
 %% QP
+    Q = QA;
+    f = fA;
 
-    % Quadratic term
-    soft = 100;
-    Q = blkdiag(QA,soft*eye(H));
-    % Linear term
-    f = [fA'  zeros(H,1)']';
+%    % Quadratic term
+%     soft = 100;
+%     Q = blkdiag(QA,soft*eye(H));
+%     
+%     % Linear term
+%     f = [fA'  zeros(H,1)']';
     
     options =  optimoptions('quadprog','Display','off');
-    soln = quadprog(Q,f,LA,SA,[],[],[],[],[],options);
+    [soln,fval] = quadprog(Q,f,LA,SA,[],[],[],[],[],options);
 %    soln = quadprog(QA,fA,LA,SA,[],[],[],[],[],options);
     % TB path update 
     alpha_out = soln(1:6*H);
@@ -223,6 +231,7 @@ theta_implement = [theta_implement Ax_current];
 end_implement = [end_implement  end_effector(:,2)];
 traj_implement = [traj_implement X_out(6:7)'];
 pla_implement = [pla_implement X_out(13:15)'];
+all_implement = [all_implement z0_];
 
 
     
