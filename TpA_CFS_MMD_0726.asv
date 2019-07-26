@@ -62,7 +62,7 @@ for steps=1:ss
     % Quadratic term
     QA =  c(1)*Baug'*Ep'*Ep*Baug + c(2)*Baug'*Ev'*Q2aug*Ev*Baug + c(3)*Baug'*Eth'*Q3aug*Eth*Baug + c(4)*Raug;
     % Linear term
-    fA = [c(1)*(z0_'*Aaug'*Ep'-pref')*Ep*Baug + c(2)*(z0_'*Aaug'*Ev'-vref')*Q2aug*Ev*Baug + c(3)*(z0_'*Aaug'*Eth'-thref')*Q3aug*Eth*Baug]';
+    fA = [c(1)*(z0_'*Aaug'*Ep'-pref')*Q2aug*Ev*Baug + c(2)*(z0_'*Aaug'*Ev'-vref')*Q2aug*Ev*Baug + c(3)*(z0_'*Aaug'*Eth'-thref')*Q3aug*Eth*Baug]';
   
 tic
         
