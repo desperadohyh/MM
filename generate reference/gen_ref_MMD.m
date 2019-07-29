@@ -2,6 +2,9 @@
 % clear all 
 % close all
 
+%% General parameters
+g = 9.81;
+
 %% TB3 model
 
 tb3.base = [0.065 0.065 -0.195 -0.195;
