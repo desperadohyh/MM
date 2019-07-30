@@ -103,8 +103,8 @@ KENG = sum(Keng);
 %% Potential Energy
 
 
-ueng(1) = m(1)*g*(M{1}(3,4) + lc(1)*sin(pi/2 - Z0(1)));
-ueng(2) = m(2)*g*(M{1}(3,4) + l(1)*sin(pi/2 - Z0(1)) - lc(2)*sin(Z0(1) + Z0(3)));
+ueng(1) = m(1)*g*(M{1}(3,4) + lc(1)*sin(pi/2 - (Z0(1)+0.2450)));
+ueng(2) = m(2)*g*(M{1}(3,4) + l(1)*sin(pi/2 - (Z0(1)+0.2450)) - lc(2)*sin(Z0(1) + Z0(3)));
 
 
 UENG = sum(ueng);

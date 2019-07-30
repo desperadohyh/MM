@@ -10,7 +10,7 @@ close all
 %% parameter definition
 % TB definition
 % sampling time
-dt          = 0.1;
+dt          = 0.5;
 % TB: obstacle
 nobj        = 1;
 obs         = {};
@@ -54,45 +54,28 @@ ss = 30;
 t = 1:ss;
 torque_implement = [];
 torque_implement1 = [];
-angle_implement = [];
 robot.base = [0 0 0]';
-
-A = [1 dt 0 0; 
-     0  1 0 0;
-     0  0 1 dt;
-     0  0 0 1 ];
- 
-B = [0.5*dt^2    0 ;
-     dt          0 ;
-     0        0.5*dt^2;
-     0           dt];
 % generate refrence
 
-alpha_all = [0*(pi/6)*cos((t/180)*pi*(180)/ss);
-             -0*(pi/6)*cos((t/180)*pi*(180)/ss)];
+alpha_all = [(pi/6)*cos((t/180)*pi*(180)/ss);
+             -(pi/6)*cos((t/180)*pi*(180)/ss)];
            
     
 
-z0 = [0 0 -pi/2 0]';
+
 
 for steps = 1:ss
-    
-    
-u = alpha_all(:,steps);
-[zk]=lin_model(u,A,B,z0);
 
-robot.z0_ = zk;
+robot.z0_ = z0_all(:,steps);
 [ Mk, Vk, Gk, robot] = joint_torque_r(robot,obs_arm);
 torque_implement = [torque_implement  Mk*alpha_all(:,steps)+Vk+Gk ];
-% [ A_tau, b_tau, robot] = joint_torque_old(robot,obs_arm);
-% torque_implement1 = [torque_implement1  A_tau*alpha_all(:,steps)+b_tau ];
-angle_implement = [angle_implement zk];
-z0 = zk;
+[ A_tau, b_tau, robot] = joint_torque_old(robot,obs_arm);
+torque_implement1 = [torque_implement1  A_tau*alpha_all(:,steps)+b_tau ];
 end
 %% plot
 figure
 gap = 3;
-plot_arm(ss,[angle_implement(1,:);angle_implement(3,:)],robot,gap,1)
+plot_arm(ss,[z0_all(1,:);z0_all(3,:)],robot,gap,1)
 
 figure
 plot(torque_implement(1,:))
@@ -101,7 +84,7 @@ plot(torque_implement(2,:))
 
 xlabel('Time steps')
 ylabel('Torque')
-% plot(torque_implement1(1,:))
-% hold on
-% plot(torque_implement1(2,:))
-legend('\theta_1', '\theta_2')
+plot(torque_implement1(1,:))
+hold on
+plot(torque_implement1(2,:))
+legend('\theta_1', '\theta_2','o\theta_1', 'o\theta_2')

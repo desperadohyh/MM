@@ -33,11 +33,11 @@ for i=2:nlink+1
                 0  cos(angle_f) -sin(angle_f); 
                 0  sin(angle_f) cos(angle_f) ];
             if flip == 2
-                Rz=[cos(-angle_f)  -sin(-angle_f) 0; 
-                    sin(-angle_f)  cos(-angle_f)  0;  
+                Rz=[cos(angle_f)  -sin(angle_f) 0; 
+                    sin(angle_f)  cos(angle_f)  0;  
                       0              0          1];
             end
-            R = Rz*Rx*R;
+            R = Rx*Rz*R;
         end
         
         M{i}=M{i-1}*[R T(:,i); zeros(1,3) 1]; 

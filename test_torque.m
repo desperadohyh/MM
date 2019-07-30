@@ -1,5 +1,6 @@
 %% test torque
-
+clear all
+close all
 
 % robot parameters
 dt          = 0.1;
@@ -49,7 +50,7 @@ M = [M_11 M_12;
 V = [ -2*m(2)*l(1)*lc(2)*Z0(2)*sin(Z0(3))*Z0(4)-m(2)*l(1)*lc(2)*sin(Z0(3))*Z0(4)^2;
                          m(2)*l(1)*lc(2)*sin(Z0(3))*Z0(2)^2                       ];
  
-G = [g*cos(Z0(1))*(m(1)*lc(1)+m(2)*l(1))+m(2)*g*lc(2);
+G = [g*cos(Z0(1))*(m(1)*lc(1)+m(2)*l(1))+m(2)*g*lc(2)*cos(Z0(1)+Z0(3));
           m(2)*g*lc(2)*cos(Z0(1)+Z0(3))              ];
       
 
@@ -64,24 +65,19 @@ angle_implement = [];
 
 robot.base = [0 0 0]';
 
-% generat data
-% z0_all = [ linspace(pi/2,pi/6,ss);
-%            (pi/6)*sin((t/180)*pi*(180)/ss);
-%            linspace(-pi/2,-pi/6,ss);
-%            -(pi/6)*sin((t/180)*pi*(180)/ss)];
-%        
-% alpha_all = [(pi/6)*cos((t/180)*pi*(180)/ss);
-%              -(pi/6)*cos((t/180)*pi*(180)/ss)];
-         
-% z0_all = [ linspace(pi/2,pi/6,ss);
-%            (pi/6)*sin((t/180)*pi*(180)/ss);
-%            linspace(-pi/2,-pi/2,ss);
-%            0*sin((t/180)*pi*(180)/ss)];
-       
-alpha_all = [(pi/6)*cos((t/180)*pi*(180)/ss);
-             -(pi/6)*cos((t/180)*pi*(180)/ss)];
-         
-z0 = [pi/2 0 -pi/2 0]';
+% generat data       
+% alpha_all = [-(pi/6)*cos((t/180)*pi*(180)/ss);
+%              (pi/6)*cos((t/180)*pi*(180)/ss)];
+
+%  alpha_all = [linspace(0.5236,0,ss/2) linspace(0,-0.5236,ss/2);
+%               linspace(0,0.4,ss/3) linspace(0.4,-0.4,ss/3) linspace(-0.4,0,ss/3)];
+% 
+
+  alpha_all = [linspace(0,0.4,ss/3) linspace(0.4,-0.4,ss/3) linspace(-0.4,0,ss/3);
+               linspace(0,0.4,ss/3) linspace(0.4,-0.4,ss/3) linspace(-0.4,0,ss/3)];
+        
+
+z0 = [pi/2 0 0 0]';
 
 for steps = 1:ss
 
@@ -119,10 +115,10 @@ end
 
 %% plot
 gap = 1;
-figure
-plot_arm(ss,[z0_all(1,:);z0_all(3,:)],robot,gap,2);
+%figure
+%plot_arm(ss,[angle_implement(1,:);angle_implement(3,:)],robot,gap,2);
 
-figure
+%figure
 plot(-torque_implement(1,:))
 hold on
 plot(-torque_implement(2,:))
@@ -132,7 +128,7 @@ ylabel('Torque')
 % plot(-torque_implement2(1,:))
 % hold on
 % plot(-torque_implement2(2,:))
-legend('\theta_1', '\theta_2','o\theta_1', 'o\theta_2')
+legend('\tau \theta_1', '\tau \theta_2','o\theta_1', 'o\theta_2')
 
 figure
 angle_implement_deg = (180/pi).*angle_implement;
