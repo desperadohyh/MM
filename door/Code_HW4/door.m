@@ -18,7 +18,7 @@ close all;
 %%
 SW_PAA_ON         = 1;
 %%
-Gain_ =-1
+Gain_ =-1;
 
 % parameters
 m = 1;
@@ -121,9 +121,10 @@ if FLAG_FORGETTING_FACTOR
     title('forgetting factor \lambda');
 end
 %%
-figure, plot(theta.time, b_c.signals.values); title('evolution of p(c_k|z_k,s^\hat_k');
+figure, plot(theta.time, b_c.signals.values); %title('evolution of p(c_k|z_k,s^\hat_k');
 axis([0 5 -0.5 1.5]); grid on;
 xlabel('Time [s]')
+legend('b(ck =1)','b(ck =2)')
 
 figure, plot(y.time, y.signals.values); title('output angle');
 axis([0 5 -0.1 2]); grid on;

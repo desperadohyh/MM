@@ -1,4 +1,4 @@
-function plot_arm(ss,theta_implement,robot,gap)
+function plot_arm(ss,theta_implement,robot,gap,flip)
 pos={};
 
 links_=[];
@@ -20,7 +20,7 @@ for i=2:gap:ss
     
     % get reference theta
     theta=theta_implement(:,i);
-    [pos,M]=plot_link_s(theta,robot.base',robot.cap);
+    [pos,M]=plot_link_s(theta,robot.base',robot.cap,flip);
         
     
     

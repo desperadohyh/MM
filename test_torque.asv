@@ -120,7 +120,7 @@ end
 %% plot
 gap = 1;
 figure
-plot_arm(ss,[z0_all(1,:);z0_all(3,:)],robot,gap,2);
+%plot_arm(ss,[z0_all(1,:);z0_all(3,:)],robot,gap,2);
 
 figure
 plot(-torque_implement(1,:))
@@ -133,12 +133,4 @@ ylabel('Torque')
 % hold on
 % plot(-torque_implement2(2,:))
 legend('\theta_1', '\theta_2','o\theta_1', 'o\theta_2')
-
-figure
-angle_implement_deg = (180/pi).*angle_implement;
-plot(angle_implement_deg(1,:))
-hold on
-%plot(angle_implement(2,:))
-plot(angle_implement_deg(3,:))
-%plot(angle_implement(4,:))
-legend('\theta_1', '\theta_2')
+ 

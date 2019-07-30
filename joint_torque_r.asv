@@ -1,4 +1,4 @@
-function [ Mk, Vk, Gk, robot] = joint_torque_r(robot,obs_arm)
+function [ A_tau, b_tau, robot] = joint_torque_r(robot,obs_arm)
 
 g = 9.81;
 cap = robot.cap;
@@ -116,11 +116,12 @@ Mk = double(subs(thetadd,Z0,robot.z0_));
 
 Vk_2 = gradient(KENG,[Z0(2) Z0(4) ]);
 Vk_1 = jacobian(Vk_2,[Z0(1) Z0(3) ]);
-thetad = Vk_1*robot.z0_(2:2:end)+gradient(-KENG,[Z0(1) Z0(3) ]);
+thetad = Vk_1*+gradient(-KENG,[Z0(1) Z0(3) ]);
 Vk = double(subs(thetad,Z0,robot.z0_));
 
-uthetad = gradient(UENG,[Z0(1) Z0(3)]);
-Gk = double(subs(uthetad,Z0,robot.z0_));
+thetad = gradient(-KENG,[Z0(1) Z0(3) ]);
+thetad = thetad + gradient(UENG,[Z0(1) Z0(3)]);
+b_tau = double(subs(thetad,Z0,robot.z0_));
 
 
 
