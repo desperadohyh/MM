@@ -61,9 +61,9 @@ B = kron(eye(4),Interg_);
 % generate refrence
 
 alpha_all = [            zeros(1,ss);
-              0*(pi/6)*cos((t/180)*pi*(180)/ss);
-             -0*(pi/6)*cos((t/180)*pi*(180)/ss);
-                         zeros(1,ss)           ];
+              (pi/6)*cos((t/180)*pi*(180)/ss);
+             -(pi/2)*cos((t/180)*pi*(180)/ss);
+             -(pi/3)*cos((t/180)*pi*(180)/ss)         ];
            
     
 
