@@ -42,7 +42,7 @@ robot.Z0 = sym('z',[8 1]);
 robot.nTherta = 6;
 
 %% simulation loop
-ss = 30;
+ss = 10;
 t = 1:ss;
 torque_implement = [];
 torque_implement1 = [];
@@ -77,7 +77,7 @@ u = alpha_all(:,steps);
 
 robot.z0_ = zk;
 [ Mk, Vk, Gk, robot] = joint_torque_4(robot,[]);
-torque_implement = [torque_implement  Mk*alpha_all(:,steps)+Vk+Gk ];
+torque_implement = [torque_implement  Mk*u+Vk+Gk ];
 % [ A_tau, b_tau, robot] = joint_torque_old(robot,obs_arm);
 % torque_implement1 = [torque_implement1  A_tau*alpha_all(:,steps)+b_tau ];
 angle_implement = [angle_implement zk];

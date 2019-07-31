@@ -83,7 +83,7 @@ Wo_l(:,1) = [0;0;Z0(2)]; %angular velocity of the origion w.r.t local coordinate
 for i = 1:nlink
     R_inv{i} = inv(R_{i});
 end
-
+robot.R_inv =  R_inv;
 Vc(:,1) = sym([ 0  0  0]');  %%%%%%%%%%% need to be initialized with model change%%%%%%%%%%%%%%%
 Vo_l(:,1) = R_inv{i}*Vc(:,1);
 Keng(1) = 0.5*m(1)*Vc(:,1)'*Vc(:,1) + 0.5*Wo_l(:,1)'*Ic{1}*Wo_l(:,1);
@@ -91,7 +91,7 @@ Keng(1) = 0.5*m(1)*Vc(:,1)'*Vc(:,1) + 0.5*Wo_l(:,1)'*Ic{1}*Wo_l(:,1);
 for i = 1:nlink-1
     Vo_l(:,i+1) = R_inv{i} * (Vo_l(:,i) + cross(Wo_l(:,i),T(:,i+2)));
     Vo_g(:,i+1) = M{i+2}(1:3,1:3)*Vo_l(:,i+1);
-    Wo_l(:,i+1) = R_inv{i+1}*Wo_l(:,i) + [ 0 0 Z0((i-1)*2+1)]';
+    Wo_l(:,i+1) = R_inv{i+1}*Wo_l(:,i) + [ 0 0 Z0(i*2)]';
     Vc(:,i+1) = Vo_g(:,i+1) + M{i+2}(1:3,1:3)*(cross(Wo_l(:,i+1),Tc(:,i+1)));
     Keng(i+1) = 0.5*m(i+1)*Vc(:,i+1)'*Vc(:,i+1) + 0.5*Wo_l(:,i+1)'*Ic{i+1}*Wo_l(:,i+1);
 end
