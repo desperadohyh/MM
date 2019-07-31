@@ -27,26 +27,18 @@ gen_ref_MMD
 
 % Arm definition
 % Arm parameters
-robot=robotproperty_MMD_s(4, z0_, Ts);
+robot=robotproperty_MMD_4(4, z0_, Ts);
 % Arm joint
 njoint      =5; % joint number
 nstate      =10; % QP variable dim
 nu          =5; % acceleration dim 
 DH          =robot.DH;
 
-% Arm obs
-% center position (1.05,-0.2)
-obs_arm     =[[1.05;-0.2;0.35] [1.05;-0.2;0.5]];
-obs_arm_r   = 0.35; % radius
 
-ss=5;
-X_out(1) = 0;
-cc = 1;
-xV = 0.2
 
 bb=1;
-robot.Z0 = sym('z',[4 1]);
-robot.z0_ = [ 0 0 -pi/2 0 ]';
+robot.Z0 = sym('z',[8 1]);
+
 robot.nTherta = 6;
 
 %% simulation loop
@@ -57,23 +49,25 @@ torque_implement1 = [];
 angle_implement = [];
 robot.base = [0 0 0]';
 
-A = [1 dt 0 0; 
-     0  1 0 0;
-     0  0 1 dt;
-     0  0 0 1 ];
+Interg = [1 dt;
+          0  1];
+      
+Interg_ = [0.5*dt^2;
+              dt];
+
+A = kron(eye(4),Interg);
  
-B = [0.5*dt^2    0 ;
-     dt          0 ;
-     0        0.5*dt^2;
-     0           dt];
+B = kron(eye(4),Interg_);
 % generate refrence
 
-alpha_all = [0*(pi/6)*cos((t/180)*pi*(180)/ss);
-             -0*(pi/6)*cos((t/180)*pi*(180)/ss)];
+alpha_all = [            zeros(1,ss);
+              0*(pi/6)*cos((t/180)*pi*(180)/ss);
+             -0*(pi/6)*cos((t/180)*pi*(180)/ss);
+                         zeros(1,ss)           ];
            
     
 
-z0 = [0 0 -pi/2 0]';
+z0 = [0 0 0 0 -pi/2 0 0 0]';
 
 for steps = 1:ss
     
@@ -82,7 +76,7 @@ u = alpha_all(:,steps);
 [zk]=lin_model(u,A,B,z0);
 
 robot.z0_ = zk;
-[ Mk, Vk, Gk, robot] = joint_torque_r(robot,obs_arm);
+[ Mk, Vk, Gk, robot] = joint_torque_4(robot,[]);
 torque_implement = [torque_implement  Mk*alpha_all(:,steps)+Vk+Gk ];
 % [ A_tau, b_tau, robot] = joint_torque_old(robot,obs_arm);
 % torque_implement1 = [torque_implement1  A_tau*alpha_all(:,steps)+b_tau ];
@@ -92,16 +86,18 @@ end
 %% plot
 figure
 gap = 3;
-plot_arm(ss,[angle_implement(1,:);angle_implement(3,:)],robot,gap,1)
+plot_arm(ss,[angle_implement(1,:);angle_implement(3,:);angle_implement(5,:);angle_implement(7,:)],robot,gap,1)
 
 figure
 plot(torque_implement(1,:))
 hold on
 plot(torque_implement(2,:))
+plot(torque_implement(3,:))
+plot(torque_implement(4,:))
 
 xlabel('Time steps')
 ylabel('Torque')
 % plot(torque_implement1(1,:))
 % hold on
 % plot(torque_implement1(2,:))
-legend('\theta_1', '\theta_2')
+legend('\theta_1', '\theta_2','\theta_3', '\theta_4')

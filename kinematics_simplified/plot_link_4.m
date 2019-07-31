@@ -1,8 +1,5 @@
-function [ pos,M] = plot_link_4(robot,theta,base,cap,flip)
-% ????obstacle???arm????id
- T = [0   0   0.03 ;
-      0   0  -0.12 ;
-      0   0    0  ]; %% distance between coordinates
+function [ pos,M] = plot_link_4(T,theta,base,cap,flip)
+
 nstate = size(theta,1);
 d = Inf;
 if size(base,2)>1
@@ -26,7 +23,7 @@ for i=2:nlink+1
         % T in book
         %T=[DHn(i-1,3);-sin(DHn(i-1,4))*DHn(i,2);cos(DHn(i-1,4))*DHn(i,2)];
         
-        if i == 2
+        if i == 3
             Rz = eye(3);
             angle_f = 0.5*pi*(-1)^flip;
             Rx=[1     0             0        ;  

@@ -6,7 +6,7 @@ etrj=[];
 
 points = size(theta_implement,1)+1;
 
-
+T = robot.T;
 %% Plot
 
 for i=2:gap:ss
@@ -20,9 +20,9 @@ for i=2:gap:ss
     
     % get reference theta
     theta=theta_implement(:,i);
-    [pos,M]=plot_link_s(theta,robot.base',robot.cap,flip);
+    %[pos,M]=plot_link_s(theta,robot.base',robot.cap,flip);
         
-    
+    [pos,M]=plot_link_4(T,theta,robot.base',robot.cap,flip);
     
     
     

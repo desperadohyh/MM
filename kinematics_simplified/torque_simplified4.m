@@ -27,22 +27,14 @@ gen_ref_MMD
 
 % Arm definition
 % Arm parameters
-robot=robotproperty_MMD_s(4, z0_, Ts);
+robot=robotproperty_MMD_4(4, z0_, Ts);
 % Arm joint
 njoint      =5; % joint number
 nstate      =10; % QP variable dim
 nu          =5; % acceleration dim 
 DH          =robot.DH;
 
-% Arm obs
-% center position (1.05,-0.2)
-obs_arm     =[[1.05;-0.2;0.35] [1.05;-0.2;0.5]];
-obs_arm_r   = 0.35; % radius
 
-ss=5;
-X_out(1) = 0;
-cc = 1;
-xV = 0.2
 
 bb=1;
 robot.Z0 = sym('z',[4 1]);
@@ -57,23 +49,25 @@ torque_implement1 = [];
 angle_implement = [];
 robot.base = [0 0 0]';
 
-A = [1 dt 0 0; 
-     0  1 0 0;
-     0  0 1 dt;
-     0  0 0 1 ];
+Interg = [1 dt;
+          0  1];
+      
+Interg_ = [0.5*dt^2;
+              dt];
+
+A = kron(eye(4),Interg);
  
-B = [0.5*dt^2    0 ;
-     dt          0 ;
-     0        0.5*dt^2;
-     0           dt];
+B = kron(eye(4),Interg_);
 % generate refrence
 
-alpha_all = [0*(pi/6)*cos((t/180)*pi*(180)/ss);
-             -0*(pi/6)*cos((t/180)*pi*(180)/ss)];
+alpha_all = [            zeros(1,ss);
+              0*(pi/6)*cos((t/180)*pi*(180)/ss);
+             -0*(pi/6)*cos((t/180)*pi*(180)/ss);
+                         zeros(1,ss)           ];
            
     
 
-z0 = [0 0 -pi/2 0]';
+z0 = [0 0 0 0 -pi/2 0 0 0]';
 
 for steps = 1:ss
     

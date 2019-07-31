@@ -1,4 +1,4 @@
-function [ A_tau, b_tau, robot] = joint_torque_r(robot,obs_arm)
+function [ Mk, Vk, Gk, robot] = joint_torque_r(robot,obs_arm)
 
 g = 9.81;
 cap = robot.cap;
@@ -8,7 +8,7 @@ theta = robot.theta;
 R_ = robot.R_;
 M = robot.M;
 nlink = robot.nlink;
-T = robot.T;
+T = robot.T; % distance between coordinates
 Tc = robot.Tc;
 l = robot.l;
 lc = robot.lc;
@@ -18,9 +18,7 @@ R_inv = cell(1,nlink);
 Ic = robot.Ic;
 obs = obs_arm;
 
- T = [0   0   0.03 ;
-      0   0  -0.12 ;
-      0   0    0  ]; %% distance between coordinates
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 nstate = size(DH,1);
 for i=1:nstate
@@ -49,7 +47,7 @@ for i=2:nlink+1
         % T in book
         %T=[DHn(i-1,3);-sin(DHn(i-1,4))*DHn(i,2);cos(DHn(i-1,4))*DHn(i,2)];
         
-        if i == 2
+        if i == 3
             Rx=[1     0             0        ;  
                 0  cos(-0.5*pi) -sin(-0.5*pi); 
                 0  sin(-0.5*pi) cos(-0.5*pi) ];
@@ -86,7 +84,7 @@ for i = 1:nlink
     R_inv{i} = inv(R_{i});
 end
 
-Vc(:,1) = [ lc(1)*Z0(2) 0  0]';
+Vc(:,1) = sym([ 0  0  0]');  %%%%%%%%%%% need to be initialized with model change%%%%%%%%%%%%%%%
 Vo_l(:,1) = R_inv{i}*Vc(:,1);
 Keng(1) = 0.5*m(1)*Vc(:,1)'*Vc(:,1) + 0.5*Wo_l(:,1)'*Ic{1}*Wo_l(:,1);
 
@@ -103,20 +101,28 @@ KENG = sum(Keng);
 %% Potential Energy
 
 
-ueng(1) = m(1)*g*(M{1}(3,4) + lc(1)*sin(pi/2 - Z0(1)));
-ueng(2) = m(2)*g*(M{1}(3,4) + l(1)*sin(pi/2 - Z0(1)) - lc(2)*sin(Z0(1) + Z0(3)));
+ueng(1) = m(1)*g*(M{1}(3,4) + lc(1)*sin(pi/2 - (Z0(1)+0.2450)));
+ueng(2) = m(2)*g*(M{1}(3,4) + l(1)*sin(pi/2 - (Z0(1)+0.2450)) - lc(2)*sin(Z0(1) + Z0(3)));
 
+ueng(1) = m(1)*g*lc(1);
+ueng(2) = m(2)*g*(M{2}(3,4) + lc(2)*sin(pi/2 - (Z0(3)+0.2450)));
+ueng(3) = m(3)*g*(M{2}(3,4) + l(2)*sin(pi/2 - (Z0(3)+0.2450)) - lc(3)*sin(Z0(3) + Z0(5)));
+ueng(4) = m(4)*g*(M{2}(3,4) + l(2)*sin(pi/2 - (Z0(3)+0.2450)) - l(3)*sin(Z0(3) + Z0(5)) - lc(4)*sin(Z0(3) + Z0(5) + Z0(7)));
 
 UENG = sum(ueng);
 %% Inner-torque
 
 
-thetadd = hessian(KENG,[Z0(2) Z0(4) ]);
-A_tau = double(subs(thetadd,Z0,robot.z0_));
+thetadd = hessian(KENG,[Z0(2) Z0(4) Z0(6) Z0(8)]);
+Mk = double(subs(thetadd,Z0,robot.z0_));
 
-thetad = gradient(-KENG,[Z0(1) Z0(3) ]);
-thetad = thetad + gradient(UENG,[Z0(1) Z0(3)]);
-b_tau = double(subs(thetad,Z0,robot.z0_));
+Vk_2 = gradient(KENG,[Z0(2) Z0(4) Z0(6) Z0(8) ]);
+Vk_1 = jacobian(Vk_2,[Z0(1) Z0(3) Z0(5) Z0(7)]);
+thetad = Vk_1*robot.z0_(2:2:end)+gradient(-KENG,[Z0(1) Z0(3) Z0(5) Z0(7)]);
+Vk = double(subs(thetad,Z0,robot.z0_));
+
+uthetad = gradient(UENG,[Z0(1) Z0(3) Z0(5) Z0(7)]);
+Gk = double(subs(uthetad,Z0,robot.z0_));
 
 
 

@@ -94,7 +94,7 @@ switch id
         %The length of each links and DH parameter and base
         robot.l=[0.0825;0.04; 0.12228; 0.1245; 0.08 ];
         robot.lc=[0.0425;0.02; 0.0618; 0.0645; 0.05 ];
-        theta = [0; -0.5*pi; 0 ; 0 ;0 ];
+        theta = [0; 0; 0 ; 0 ;0 ];
         robot.theta = theta;
         T = [0   0 -0.15    0   0.03 0.13;
              0   0   0      0  -0.12   0 ;
