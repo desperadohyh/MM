@@ -1,6 +1,6 @@
 clc
 clear all
-close all
+%close all
 % fighandle = [];
 % fighandle(1) = figure(1); hold on;
 % set(gcf, 'position', [0 0 500 500]);
@@ -60,7 +60,7 @@ A = kron(eye(4),Interg);
 B = kron(eye(4),Interg_);
 % generate refrence
 
-alpha_all = [            zeros(1,ss);
+alpha_all = [ 3*(pi)*cos((t/180)*pi*(180)/ss);
               (pi/6)*cos((t/180)*pi*(180)/ss);
              -(pi/2)*cos((t/180)*pi*(180)/ss);
              -(pi/3)*cos((t/180)*pi*(180)/ss)         ];
@@ -100,4 +100,14 @@ ylabel('Torque')
 % plot(torque_implement1(1,:))
 % hold on
 % plot(torque_implement1(2,:))
+legend('\theta_1', '\theta_2','\theta_3', '\theta_4')
+
+figure
+angle_implement_deg = (180/pi).*angle_implement;
+plot(angle_implement_deg(1,:))
+hold on
+plot(angle_implement_deg(3,:))
+plot(angle_implement_deg(5,:))
+plot(angle_implement_deg(7,:))
+
 legend('\theta_1', '\theta_2','\theta_3', '\theta_4')

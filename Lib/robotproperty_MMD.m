@@ -88,18 +88,21 @@ switch id
         robot.thetamax=[-pi,pi;-pi,pi; -pi/2,pi/2; -pi/2,(pi/2)*0.75; -pi*0.75,pi*0.75];
         robot.thetadotmax=[1;1;1;1;1];
         robot.margin=0.05;
-        robot.delta_t=0.5;
+        robot.delta_t=Ts;
         robot.tua_max = 3;
         
         %The length of each links and DH parameter and base
+        robot.r = 0.0215;              % wheel diameter
+        robot.d = 0.13;                % robot width
         robot.l=[0.0825;0.04; 0.12228; 0.1245; 0.08 ];
         robot.lc=[0.0425;0.02; 0.0618; 0.0645; 0.05 ];
         theta = [0; 0; 0 ; 0 ;0 ];
         robot.theta = theta;
-        T = [0   0 -0.15    0   0.03 0.13;
-             0   0   0      0  -0.12   0 ;
-             0   0   0.0  0.04     0    0];
-         
+        robot.T = [0   0 -0.15    0   0.03 0.13;
+                   0   0   0      0  -0.12   0 ;
+                   0   0   0.0  0.04     0    0];
+        
+        T = robot.T;
         robot.Tc = [   -0.10   0     0.015 0.07  0.05;
                         0      0    -0.07   0    0 ;
                         0.0   0.04     0    0    0];
@@ -115,17 +118,19 @@ switch id
 %                   0, 0, 0.1245, 0];%theta,d,a,alpha
         robot.m = [0.8; 0.1 ; 0.13 ; 0.12 ; 0.4];
         
-        Ixyz = [2.2675     0     0     0    0
-               0         0     0     0    0
-               0         0     0     0    0]*10^-05; %%%%%%
+        Ixyz = [ 1.3614  163    163   35.3
+                 2.057   3.5    3.5   160
+                 2.295   163    163   140 ]*10^-05; %%%%%%
         
         robot.Ic = cell(1,nlink);
-        for i = 1:nlink
-            robot.Ic{i} = diag(Ixyz(:,i));
+        for i = 2:nlink
+            robot.Ic{i} = diag(Ixyz(:,i-1));
         end
                
-        
-               
+        robot.Ic{1} = [ 18.7298   0.379   1.822;
+                        0.379    18.788   0.484;
+                        1.822      0.484   26.788]*10^-03;
+
         robot.base=[0;0;0];%origin
         
         robot.cap={};

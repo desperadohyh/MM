@@ -1,4 +1,6 @@
-function [A_tau, b_tau, robot] = get_joint_torque(robot,obs_arm)
+function [d, linkid, A_tau, b_tau, robot] = get_joint_torque(robot,obs_arm)
+% xA, yA, xAd, yAd, v,   t1, t1d, tR, tRd, tL,  
+% tLd, t2, t2d, t3, t3d,   t4, t4d,t5,t5d 
 
 g = 9.81;
 cap = robot.cap;
@@ -17,6 +19,7 @@ Z0 = robot.Z0;
 R_inv = cell(1,nlink);
 Ic = robot.Ic;
 obs = obs_arm;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 T = [0   0 -0.15    0   0.03 0.13;
      0   0   0      0  -0.12   0 ;
@@ -67,4 +70,60 @@ A_tau = double(subs(thetadd,Z0,robot.z0_));
 thetad = gradient(-KENG,[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
 thetad = thetad + gradient(UENG,[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
 b_tau = double(subs(thetad,Z0,robot.z0_));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+nstate = size(DH,1);
+for i=1:nstate
+DH(i,1)=theta(i);
+end%theta,d,a,alpha
+d = Inf;
+if size(base,2)>1
+    base=base';
+end
+
+%pos=CapPos(base,DH,cap);
+
+% Ulternative for CapPos
+
+RoCap = cap;
+nlink=size(theta,1);
+pos=cell(1,nlink);
+M=cell(1,nlink+1); M{1}=eye(4);
+R_=cell(1,nlink); R_{1}=eye(3);
+for i=2:nlink+1
+        % R in book
+        R=[cos(theta(i-1)) -sin(theta(i-1))  0;
+            sin(theta(i-1)) cos(theta(i-1))  0;
+              0                        0                 1];
+        % T in book
+        %T=[DHn(i-1,3);-sin(DHn(i-1,4))*DHn(i,2);cos(DHn(i-1,4))*DHn(i,2)];
+        
+        if i == 4
+            Rx=[1     0             0        ;  
+                0  cos(-0.5*pi) -sin(-0.5*pi); 
+                0  sin(-0.5*pi) cos(-0.5*pi) ];
+                   
+            R = Rx*R;
+        end
+        R_{i-1} = R;
+        M{i}=M{i-1}*[R T(:,i); zeros(1,3) 1]; ; 
+        for k=1:2
+         pos{i-1}.p(:,k)=M{i}(1:3,1:3)*RoCap{i-1}.p(:,k)+M{i}(1:3,4)+base;
+        end
+end
+
+robot.R_ = R_;
+robot.M = M;
+
+for i=1:nstate
+    
+    [dis, points] = distLinSeg(pos{i}.p(:,1),pos{i}.p(:,2), obs(:,1),obs(:,2));
+    if norm(dis)<0.0001
+        dis = -norm(points(1:3,1)-pos{i}.p(:,2));%%%%%%%%
+    end        
+    if dis < d
+        d = dis;
+        linkid=i;
+    end
+end
 end

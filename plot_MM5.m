@@ -1,4 +1,4 @@
-function plot_implement(ss,theta_implement,traj_implement,robot,tb3,gap,door)
+function plot_MM5(ss,theta_implement,traj_implement,robot,tb3,gap,door)
 pos={};
 plotbase2=[];
 plotbase1=[];
@@ -9,7 +9,7 @@ plotdoor=[];
 
 %% Plot
 
-for i=2:gap:ss
+for i=1:gap:ss
 %     delete(plotbase2)
 %     delete(plotbase1)
 %     delete(plotwheels)
@@ -20,7 +20,7 @@ for i=2:gap:ss
     base = [traj_implement(:,i); 0.1];
     % get reference theta
     theta=theta_implement(:,i);
-    [pos,M]=plot_link(theta,base',robot.cap, robot.T);
+    [pos,M]=plot_MMlink(theta,base',robot.cap);
         
     % plot base
     tb3_base_w = M{2}(1:2,1:2)*tb3.base+base(1:2);

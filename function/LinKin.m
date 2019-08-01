@@ -1,8 +1,8 @@
 function [Z1, A, B ] = LinKin(z0_, U0, Ts)
 %z0_ = zeros(1,19);
 %Ts = 1;
-r = 0.03;
-d = 0.15;
+r = 0.0215;
+d = 0.13;
 Z6_ = z0_(6)+.5*Ts*z0_(7);
 Interg = [1 Ts;
           0  1];
