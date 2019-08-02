@@ -1,17 +1,17 @@
-% dt = 0.1;
-% 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%
-% gen_ref_MMD
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 
-% % Arm definition
-% % Arm parameters
-% robot=robotproperty_MMD(4, z0_, Ts);
-% nlink = 5;
-% 
-% 
-% robot.Z0 = sym('z',[19 1]);
-% robot.z0_ = sym('zk',[19 1]);
+dt = 0.1;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+gen_ref_MMD
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Arm definition
+% Arm parameters
+robot=robotproperty_MMD(4, z0_, Ts);
+nlink = 5;
+
+
+robot.Z0 = sym('z',[19 1]);
+robot.z0_ = sym('zk',[19 1]);
 
 
 
@@ -22,11 +22,12 @@
 % end
 % robot.Ic{1} = sym('IC1_',[3,3]);
 %%
-
-% [ Mk, Vk, Gk, robot] = get_joint_torque_sym(robot)
+% 
+% [ Mk, Vk, Gk, J_end, robot] = get_joint_torque_sym(robot)
 % Mkf =  matlabFunction(Mk,'File','Mk_f');
 % Vkf =  matlabFunction(Vk,'File','Vk_f');
 % Gkf =  matlabFunction(Gk,'File','Gk_f');
+% Jkf =  matlabFunction(J_end,'File','Jk_f');
 %%
 %load('MVG_2.mat')
 ss = 10;
@@ -57,13 +58,16 @@ u = alpha_all(:,steps);
 Mk_Z = Mk_f(zk(6),zk(12),zk(14),zk(16),zk(18),zk(6),zk(9),zk(11));
 Vk_Z = Vk_f(zk(6),zk(7),zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19),zk(6),zk(9),zk(11),zk(13),zk(15),zk(17),zk(19));
 Gk_Z = Gk_f(zk(14),zk(16),zk(18));
+Jk_Z = Jk_f(zk(6),zk(12),zk(14),zk(16),zk(18),zk(6),zk(9),zk(11));
 
 
-
+% torque
 tau = Mk_Z*u+Vk_Z+Gk_Z;
-
-
 torque_implement = [torque_implement  double(tau) ];
+
+% force
+Mx = inv(Jk_Z)
+
 
 % [ A_tau, b_tau, robot] = joint_torque_old(robot,obs_arm);
 % torque_implement1 = [torque_implement1  A_tau*alpha_all(:,steps)+b_tau ];

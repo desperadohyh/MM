@@ -1,4 +1,4 @@
-function [ Mk, Vk, Gk, robot] = get_joint_torque_sym(robot)
+function [ Mk, Vk, Gk, J_end, robot] = get_joint_torque_sym(robot)
 % xA, yA, xAd, yAd, v,   t1, t1d, tR, tRd, tL,  
 % tLd, t2, t2d, t3, t3d,   t4, t4d,t5,t5d 
 
@@ -117,7 +117,10 @@ Vk = Vk_1*z0_(9:2:end)+gradient(-KENG,[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]
 
 Gk = gradient(UENG,[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
 
+%% end-effector force
 
+J_end = jacobian(Vo_g(:,end),[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
+J_end = jacobian(Vo_g(:,end),[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 end
