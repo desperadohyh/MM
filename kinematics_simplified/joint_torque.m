@@ -42,7 +42,7 @@ robot.z0_ = zeros(19,1);
 robot.nTherta = 6;
 
 %% simulation loop
-ss = 1;
+ss = 10;
 t = 1:ss;
 torque_implement = [];
 torque_implement1 = [];
@@ -52,8 +52,8 @@ robot.base = [0 0 0]';
 
 % generate refrence
 
-alpha_all = [ 0*(pi)*cos((t/180)*pi*(180)/ss);
-              0*(pi)*cos((t/180)*pi*(180)/ss);
+alpha_all = [ (pi)*cos((t/180)*pi*(180)/ss);
+              (pi)*cos((t/180)*pi*(180)/ss);
               3*(pi)*cos((t/180)*pi*(180)/ss);
               (pi/6)*cos((t/180)*pi*(180)/ss);
              -(pi/2)*cos((t/180)*pi*(180)/ss);
@@ -90,7 +90,7 @@ theta_implement = [angle_implement(6,:);
                    angle_implement(18,:);
                    0.07*ones(1,ss)      ];
 figure
-gap = 5;
+gap = 2;
 plot_MM5(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0)
 %plot_implement(ss,theta_implement,traj_implement,robot,tb3,gap,0)
 
