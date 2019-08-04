@@ -128,16 +128,16 @@ plot(angle_implement_deg(16,:))
 plot(angle_implement_deg(18,:))
 
 legend('\theta_1', '\theta_2','\theta_3', '\theta_4','\theta_5', '\theta_6')
-%%
+
 % force
 figure
 
 plot(force_implement(1,:))
 hold on
-plot(force_implement(2,:))
-plot(force_implement(3,:))
-plot(force_implement(4,:))
-plot(force_implement(5,:))
-plot(force_implement(6,:))
+plot(torque_implement(2,:))
+plot(torque_implement(3,:))
+plot(torque_implement(4,:))
+plot(torque_implement(5,:))
+plot(torque_implement(6,:))
 
 legend('\theta_1', '\theta_2','\theta_3', '\theta_4','\theta_5', '\theta_6')

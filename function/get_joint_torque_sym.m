@@ -1,4 +1,4 @@
-function [ Mk, Vk, Gk, J_end, robot] = get_joint_torque_sym(robot)
+function [ Mk, Vk, Gk, J_end, Jd, robot] = get_joint_torque_sym(robot)
 % xA, yA, xAd, yAd, v,   t1, t1d, tR, tRd, tL,  
 % tLd, t2, t2d, t3, t3d,   t4, t4d,t5,t5d 
 
@@ -24,8 +24,8 @@ Ts = robot.delta_t;
 z0_ = robot.z0_;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-theta =[Z0(6) ; Z0(12:2:end)];
+th1 = z0_(6)+Ts*(r/d)*(Z0(9)-Z0(11));
+theta =[th1 ; Z0(12:2:end)];
 if size(base,2)>1
     base=base';
 end
@@ -71,17 +71,21 @@ robot.M = M;
 %Keng = zeros(nlink,1);
 
 %% Kinetic Energy
-Wo_l(:,1) = [0;0;Z0(7)];
-
-for i = 1:nlink
-    R_inv{i} = inv(R_{i});
-end
 
 th1 = z0_(6)+Ts*(r/d)*(Z0(9)-Z0(11));
 xda = (r/2)*(-(z0_(9)+z0_(11))*sin(z0_(6))*th1 + cos(z0_(6))*Z0(9) + cos(z0_(6))*Z0(11));
 yda = (r/2)*(-(z0_(9)+z0_(11))*sin(z0_(6))*th1 + cos(z0_(6))*Z0(9) + cos(z0_(6))*Z0(11));
 
-Vc(:,1) = [ xda+lc(1)*Z0(7)*sin(Z0(6))  yda-lc(1)*Z0(7)*cos(Z0(6))  0]';
+th1d = (r/d)*(Z0(9)-Z0(11));
+
+Wo_l(:,1) = [0;0;th1d];
+
+for i = 1:nlink
+    R_inv{i} = inv(R_{i});
+end
+
+
+Vc(:,1) = [ xda+lc(1)*th1d*sin(th1)  yda-lc(1)*th1d*cos(th1)  0]';
 Vo_l(:,1) = R_inv{i}*Vc(:,1);
 Keng(1) = 0.5*m(1)*Vc(:,1)'*Vc(:,1) + 0.5*Wo_l(:,1)'*Ic{1}*Wo_l(:,1);
 
@@ -105,22 +109,48 @@ ueng(5) = m(5)*g*(M{3}(3,4) + l(3)*sin(pi/2 - (Z0(14)+0.2450)) - l(4)*sin(Z0(14)
 
 UENG = sum(ueng);
 %% Inner-torque
+Mk = [];
+Vk =[];
+Gk =[];
 
-
-Mk  = hessian(KENG,[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
-
-
-Vk_2 = gradient(KENG,[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
-Vk_1 = jacobian(Vk_2,[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
-Vk = Vk_1*z0_(9:2:end)+gradient(-KENG,[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
-
-
-Gk = gradient(UENG,[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
+% Mk  = hessian(KENG,[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
+% 
+% 
+% Vk_2 = gradient(KENG,[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
+% Vk_1 = jacobian(Vk_2,[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
+% Vk = Vk_1*z0_(9:2:end)+gradient(-KENG,[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
+% 
+% 
+% Gk = gradient(UENG,[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
 
 %% end-effector force
 
-J_end = jacobian(Vo_g(:,end),[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
-J_end = jacobian(Vo_g(:,end),[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
+Jv_end = jacobian(Vo_g(:,end),[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
+Wo_g = R_{end}*Wo_l(:,end);
+Jw_end = jacobian(Wo_g,[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
+
+% Jw = [             0;
+%               Z0(14)+Z0(16)+Z0(18);
+%                     th1+Z0(12)]
+% Jw_end = jacobian(Jw,[Z0(9) Z0(11) Z0(12) Z0(14) Z0(16) Z0(18)]);
+
+J_end = [Jv_end;Jw_end];
+J_t = sym([]);
+J_d = sym([]);
+Jd = sym([]);
+%ths = [Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]';
+dths = [Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]';
+gradient(J_end(1,1),[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
+for i = 1:nlink+1
+    for j = 1:nlink+1
+        J_t = gradient(J_end(i,j),[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
+        J_d = gradient(J_end(i,j),[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
+        Jd(i,j) = J_t'*dths + J_d'*robot.uk;
+    end
+end
+        
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 end
