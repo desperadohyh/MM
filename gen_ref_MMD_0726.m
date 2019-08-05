@@ -28,7 +28,7 @@ nu = 6; % acceleration dim
 %z0_ = [0 0 0 0 0  0 0 0 0 0  0 0 0 -pi/2 0   pi/3 0 pi/4 0 ]';
 z0_ = [0 0 0 0 0  0 0 0 0 0  0 -pi/2 0 0 0   0 0 0 0 ]';
 Vref = [0.1; 0];
-Thref = [ 0 0  -pi 0 pi/4 0   -pi/4 0 pi/10 0]';
+Thref = [ 0 0  pi/4 0 pi/4 0   -pi/8 0 -pi/8 0]';
 
 r = 0.0215;
 ang = Ts*H*norm(Vref)/r;
@@ -61,6 +61,7 @@ traj_implement = [];
 end_implement = [];
 pla_implement = [];
 all_implement = [];
+force_implement = [];
 fval_all = [];
 
 
@@ -125,6 +126,9 @@ vref = kron(ones(H,1),Vref);
 thref = kron(ones(H,1),Thref);
 
                 
+%% force control
+
+F = 1.9;
 
 
 

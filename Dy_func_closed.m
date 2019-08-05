@@ -19,12 +19,16 @@ uk = robot.uk;
 
 %%
 % 
-[ Mk, Vk, Gk, J_end, Jd, robot] = get_joint_torque_sym(robot);
+%[ Mk, Vk, Gk, J_end, Jd, robot] = get_joint_torque_sym(robot);
+%[ Mk, Vk, Gk, Jrv, dJrv, robot] = get_joint_torque_0805(robot)
 % Mkf =  matlabFunction(Mk,'File','Mk_f');
 % Vkf =  matlabFunction(Vk,'File','Vk_f');
 % Gkf =  matlabFunction(Gk,'File','Gk_f');
 % Jkf =  matlabFunction(J_end,'File','Jk_f');
 %Jdkf =  matlabFunction(Jd,'File','Jdk_f');
+
+% Jrvf =  matlabFunction(Jrv,'File','Jrv_f');
+% dJrvf =  matlabFunction(dJrv,'File','dJrv_f');
 %%
 %load('MVG_3.mat')
 ss = 10;
@@ -59,12 +63,20 @@ Gk_Z = Gk_f(zk(14),zk(16),zk(18));
 Jk_Z = Jk_f(zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(6),zk(9),zk(11));
 Jdk_Z = Jdk_f(u(1),u(2),u(3),u(4),u(5),zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19),zk(6),zk(9),zk(11)); 
 
+Jrv_Z = Jrv_f(zk(6),zk(12),zk(14),zk(16),zk(18));
+dJrv_Z = dJrv_f(zk(6),zk(7),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19));
+
 % torque
 tau = Mk_Z*u+Vk_Z+Gk_Z;
 torque_implement = [torque_implement  double(tau) ];
 
 % force
-Jit = pinv(Jdk_Z)';
+% Jit = pinv(Jdk_Z)';
+% Ji = pinv(Jk_Z);
+% Mx = Jit*Mk_Z*Ji;
+% Vx = Jit*(Vk_Z-Mk_Z*Ji*Jdk_Z*zk(9:2:end));
+% Gx = Jit*Gk_Z;
+Jit = pinv(Jk_Z)';
 Ji = pinv(Jk_Z);
 Mx = Jit*Mk_Z*Ji;
 Vx = Jit*(Vk_Z-Mk_Z*Ji*Jdk_Z*zk(9:2:end));

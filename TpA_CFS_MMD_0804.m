@@ -27,7 +27,7 @@ d           = robot.d;
 % center position (1.05,-0.2)
 obs_arm     =[[1.05;-0.6;0.35] [1.05;-0.6;0.5]];
 obs_arm_r   = 0.35; % radius
-ss = 35;
+ss = 50;
 
 
 
@@ -48,9 +48,8 @@ for steps=1:ss
 %     
     % Cost Fn Parameters
     
-    tic
 for k = 1:10
-
+    tic
     
     Aaug=[kron(ones(H,1),robot.A)];Baug=kron(tril(ones(H)),robot.B);
     
@@ -123,49 +122,17 @@ for k = 1:10
     LA = eye(H*nu);
     acc_lim = 2*[pi/2 pi/2 pi/10 pi/10 pi/5 pi/5]';
     SA = kron(ones(H,1),acc_lim);
-    
-    
-    %% EE force constrain
-    LA = [LA zeros(size(LA,2),H)];
-    for i=1:H
-        zk = xref(nstate*(i-1)+1:nstate*i);
-        u = uref((i-1)*nu+1:i*nu);
-        
-    Mk_Z = Mk_f(zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19),zk(6),zk(9),zk(11));
-    Vk_Z = Vk_f(zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19),zk(6),zk(9),zk(11),zk(13),zk(15),zk(17),zk(19));
-    Gk_Z = Gk_f(zk(14),zk(16),zk(18));
-    Jk_Z = Jk_f(zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(6),zk(9),zk(11));
-    Jdk_Z = Jdk_f(u(1),u(2),u(3),u(4),u(5),zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19),zk(6),zk(9),zk(11)); 
-    
-    Jit = pinv(Jk_Z)';
-    Ji = pinv(Jk_Z);
-    Mx = Jit*Mk_Z*Ji;
-    Vx = Jit*(Vk_Z-Mk_Z*Ji*Jdk_Z*zk(9:2:end));
-    Gx = Jit*Gk_Z;
-    
-    Xdd = Jdk_Z*zk(9:2:end)+Jk_Z*u;
-    b_force = Mx*(Jdk_Z*zk(9:2:end))+Vx+Gx;
-    al =  Mx*Jk_Z;
-    LA = [LA;  zeros(1,(i-1)*nu) al(1,:) zeros(1,(H-i)*nu) zeros(1,i-1) -1 zeros(1,H-i)];
-    SA = [SA;  F-b_force(1) ];
-    LA = [LA;  zeros(1,(i-1)*nu) -al(1,:) zeros(1,(H-i)*nu) zeros(1,i-1) -1 zeros(1,H-i)];
-    SA = [SA;  -F+b_force(1) ];
-    LA = [LA;  zeros(1,H*nu)  zeros(1,i-1) -1 zeros(1,H-i)];
-    SA = [SA;  0 ];
-    
-    end
-
 
 %% QP
-%     Q = QA;
-%     f = fA;
+    Q = QA;
+    f = fA;
 
-   % Quadratic term
-    soft = 0.1;
-    Q = blkdiag(QA,soft*eye(H));
-    
-    % Linear term
-    f = [fA'  zeros(H,1)']';
+%    % Quadratic term
+%     soft = 100;
+%     Q = blkdiag(QA,soft*eye(H));
+%     
+%     % Linear term
+%     f = [fA'  zeros(H,1)']';
     
     options =  optimoptions('quadprog','Display','off');
     [soln,fval] = quadprog(Q,f,LA,SA,[],[],[],[],[],options);
@@ -201,13 +168,9 @@ for k = 1:10
 %     end
     xref = states_out;
     
-    
 
     
 end
-Xdd = Jdk_Z*z0_(9:2:end)+Jk_Z*alpha_out(1:6);
-force = Mx*Xdd+Vx+Gx;
-force_implement = [force_implement double(force)];
 k
 toc
 %%   
@@ -301,7 +264,7 @@ hold on
 end
 %%
 figure
-gap = 3;
+gap = 5;
 plot_MM5(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0)
 %plot_implement(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0)
 
@@ -392,15 +355,3 @@ ylabel('Angular velocity [rad/s]')
 legend('Vel','AngVel','location','best')
 xlabel('Time step')
 
-% force
-figure
-
-plot(force_implement(1,:))
-hold on
-plot(force_implement(2,:))
-plot(force_implement(3,:))
-plot(force_implement(4,:))
-plot(force_implement(5,:))
-plot(force_implement(6,:))
-
-legend('\theta_1', '\theta_2','\theta_3', '\theta_4','\theta_5', '\theta_6')

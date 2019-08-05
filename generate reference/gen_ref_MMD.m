@@ -25,7 +25,7 @@ end
 % xA, yA, xAd, yAd, v,   t1, t1d, tR, tRd, tL,  
 % tLd, t2, t2d, t3, t3d,   t4, t4d,t5,t5d 
 Ts = dt;
-H = 15;
+H = 10;
 nstep = H+1;
 nu = 6; % acceleration dim
 %z0_ = [0 0 0 0 0  0 0 0 0 0  0 0 0 -pi/2 0   pi/3 0 pi/4 0 ]';
@@ -120,6 +120,11 @@ Q3aug = kron(Aug, Q3);
 
 vref = kron(ones(H,1),Vref);
 thref = kron(ones(H,1),Thref);
+
+
+%% force control
+
+F = 1.9;
 
                 
 

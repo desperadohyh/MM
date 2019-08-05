@@ -1,4 +1,4 @@
-function [ Mk, Vk, Gk, J_end, Jd, robot] = get_joint_torque_sym(robot)
+function [ Mk, Vk, Gk, Jrv, dJrv, robot] = get_joint_torque_0805(robot)
 % xA, yA, xAd, yAd, v,   t1, t1d, tR, tRd, tL,  
 % tLd, t2, t2d, t3, t3d,   t4, t4d,t5,t5d 
 
@@ -25,7 +25,7 @@ z0_ = robot.z0_;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 th1 = z0_(6)+Ts*(r/d)*(Z0(9)-Z0(11));
-theta =[th1 ; Z0(12:2:end)];
+theta =[Z0(6) ; Z0(12:2:end)];
 if size(base,2)>1
     base=base';
 end
@@ -57,7 +57,7 @@ for i=2:nlink+1
         R_{i-1} = R;
         M{i}=M{i-1}*[R T(:,i); zeros(1,3) 1]; ; 
         for k=1:2
-         pos{i-1}.p(:,k)=M{i}(1:3,1:3)*RoCap{i-1}.p(:,k)+M{i}(1:3,4)+base;
+         pos{i-1}.p(:,k)=M{i}(1:3,1:3)*RoCap{i-1}.p(:,k)+M{i}(1:3,4)+[Z0(1);Z0(2);0.1];
         end
 end
 
@@ -71,43 +71,43 @@ robot.M = M;
 %Keng = zeros(nlink,1);
 
 %% Kinetic Energy
-
-th1 = z0_(6)+Ts*(r/d)*(Z0(9)-Z0(11));
-xda = (r/2)*(-(z0_(9)+z0_(11))*sin(z0_(6))*th1 + cos(z0_(6))*Z0(9) + cos(z0_(6))*Z0(11));
-yda = (r/2)*(-(z0_(9)+z0_(11))*sin(z0_(6))*th1 + cos(z0_(6))*Z0(9) + cos(z0_(6))*Z0(11));
-
-th1d = (r/d)*(Z0(9)-Z0(11));
-
-Wo_l(:,1) = [0;0;th1d];
-
-for i = 1:nlink
-    R_inv{i} = inv(R_{i});
-end
-
-
-Vc(:,1) = [ xda+lc(1)*th1d*sin(th1)  yda-lc(1)*th1d*cos(th1)  0]';
-Vo_l(:,1) = R_inv{i}*Vc(:,1);
-Keng(1) = 0.5*m(1)*Vc(:,1)'*Vc(:,1) + 0.5*Wo_l(:,1)'*Ic{1}*Wo_l(:,1);
-
-for i = 1:nlink-1
-    Vo_l(:,i+1) = R_inv{i} * (Vo_l(:,i) + cross(Wo_l(:,i),T(:,i+2)));
-    Vo_g(:,i+1) = M{i+2}(1:3,1:3)*Vo_l(:,i+1);
-    Wo_l(:,i+1) = R_inv{i+1}*Wo_l(:,i) + [ 0 0 Z0(11+i*2)]';
-    Vc(:,i+1) = Vo_g(:,i+1) + M{i+2}(1:3,1:3)*(cross(Wo_l(:,i+1),Tc(:,i+1)));
-    Keng(i+1) = 0.5*m(i+1)*Vc(:,i+1)'*Vc(:,i+1) + 0.5*Wo_l(:,i+1)'*Ic{i+1}*Wo_l(:,i+1);
-end
-
-KENG = sum(Keng);
-
-%% Potential Energy
-
-ueng(1) = sym(m(1)*g*0.1);
-ueng(2) = m(2)*g*(0.1 + lc(2));
-ueng(3) = m(3)*g*(M{3}(3,4) + lc(3)*sin(pi/2 - (Z0(14)+0.2450)));
-ueng(4) = m(4)*g*(M{3}(3,4) + l(3)*sin(pi/2 - (Z0(14)+0.2450)) - lc(4)*sin(Z0(14) + Z0(16)));
-ueng(5) = m(5)*g*(M{3}(3,4) + l(3)*sin(pi/2 - (Z0(14)+0.2450)) - l(4)*sin(Z0(14) + Z0(16)) - lc(5)*sin(Z0(14) + Z0(16) + Z0(18)));
-
-UENG = sum(ueng);
+% 
+% th1 = z0_(6)+Ts*(r/d)*(Z0(9)-Z0(11));
+% xda = (r/2)*(-(z0_(9)+z0_(11))*sin(z0_(6))*th1 + cos(z0_(6))*Z0(9) + cos(z0_(6))*Z0(11));
+% yda = (r/2)*(-(z0_(9)+z0_(11))*sin(z0_(6))*th1 + cos(z0_(6))*Z0(9) + cos(z0_(6))*Z0(11));
+% 
+% th1d = (r/d)*(Z0(9)-Z0(11));
+% 
+% Wo_l(:,1) = [0;0;th1d];
+% 
+% for i = 1:nlink
+%     R_inv{i} = inv(R_{i});
+% end
+% 
+% 
+% Vc(:,1) = [ xda+lc(1)*th1d*sin(th1)  yda-lc(1)*th1d*cos(th1)  0]';
+% Vo_l(:,1) = R_inv{i}*Vc(:,1);
+% Keng(1) = 0.5*m(1)*Vc(:,1)'*Vc(:,1) + 0.5*Wo_l(:,1)'*Ic{1}*Wo_l(:,1);
+% 
+% for i = 1:nlink-1
+%     Vo_l(:,i+1) = R_inv{i} * (Vo_l(:,i) + cross(Wo_l(:,i),T(:,i+2)));
+%     Vo_g(:,i+1) = M{i+2}(1:3,1:3)*Vo_l(:,i+1);
+%     Wo_l(:,i+1) = R_inv{i+1}*Wo_l(:,i) + [ 0 0 Z0(11+i*2)]';
+%     Vc(:,i+1) = Vo_g(:,i+1) + M{i+2}(1:3,1:3)*(cross(Wo_l(:,i+1),Tc(:,i+1)));
+%     Keng(i+1) = 0.5*m(i+1)*Vc(:,i+1)'*Vc(:,i+1) + 0.5*Wo_l(:,i+1)'*Ic{i+1}*Wo_l(:,i+1);
+% end
+% 
+% KENG = sum(Keng);
+% 
+% %% Potential Energy
+% 
+% ueng(1) = sym(m(1)*g*0.1);
+% ueng(2) = m(2)*g*(0.1 + lc(2));
+% ueng(3) = m(3)*g*(M{3}(3,4) + lc(3)*sin(pi/2 - (Z0(14)+0.2450)));
+% ueng(4) = m(4)*g*(M{3}(3,4) + l(3)*sin(pi/2 - (Z0(14)+0.2450)) - lc(4)*sin(Z0(14) + Z0(16)));
+% ueng(5) = m(5)*g*(M{3}(3,4) + l(3)*sin(pi/2 - (Z0(14)+0.2450)) - l(4)*sin(Z0(14) + Z0(16)) - lc(5)*sin(Z0(14) + Z0(16) + Z0(18)));
+% 
+% UENG = sum(ueng);
 %% Inner-torque
 Mk = [];
 Vk =[];
@@ -128,24 +128,38 @@ Gk =[];
 % Jv_end = jacobian(Vo_g(:,end),[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
 % Wo_g = R_{end}*Wo_l(:,end);
 % Jw_end = jacobian(Wo_g,[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
-Jv_end = jacobian(pos{end}.p(:,end),[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
+
 % Jw = [             0;
 %               Z0(14)+Z0(16)+Z0(18);
 %                     th1+Z0(12)]
 % Jw_end = jacobian(Jw,[Z0(9) Z0(11) Z0(12) Z0(14) Z0(16) Z0(18)]);
+Jvw = [r/2  r/2;
+      r/d  r/d];
+Jxv = [cos(Z0(6)) 0;
+       sin(Z0(6)) 0;
+         0        1];
+     
+Jrx = jacobian(pos{end}.p(:,end),[Z0(1) Z0(2) Z0(6)]);
 
-J_end = [Jv_end;Jw_end];
+Jra = jacobian(pos{end}.p(:,end),[Z0(12) Z0(14) Z0(16) Z0(18)]);
+
+J_end = [ Jrx*Jxv*Jvw  Jra];
+
+Jrv = [ Jrx*Jxv  Jra];
+
+Vc = [Z0(5) Z0(7)]';
+tha = [Z0(12) Z0(14) Z0(16) Z0(18)]';
+dthv = [Vc' tha'];
+
 J_t = sym([]);
-J_d = sym([]);
-Jd = sym([]);
+dJrv = sym([]);
 %ths = [Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]';
-dths = [Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]';
-gradient(J_end(1,1),[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
-for i = 1:nlink+1
+dths = [Z0(3) Z0(4) Z0(7) Z0(13) Z0(15) Z0(17) Z0(19)]';
+gradient(Jrv(1,1),[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
+for i = 1:3
     for j = 1:nlink+1
-        J_t = gradient(J_end(i,j),[Z0(8) Z0(10) Z0(12) Z0(14) Z0(16) Z0(18)]);
-        J_d = gradient(J_end(i,j),[Z0(9) Z0(11) Z0(13) Z0(15) Z0(17) Z0(19)]);
-        Jd(i,j) = J_t'*dths + J_d'*robot.uk;
+        J_t = gradient(Jrv(i,j),[Z0(1) Z0(2) Z0(6) Z0(12) Z0(14) Z0(16) Z0(18)]);        
+        dJrv(i,j) = J_t'*dths;
     end
 end
         
