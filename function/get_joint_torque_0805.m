@@ -1,4 +1,4 @@
-function [ Mk, Vk, Gk, Jrv, dJrv, robot] = get_joint_torque_0805(robot)
+function [ Mk, Vk, Gk, Jr, Jrv, dJrv, robot] = get_joint_torque_0805(robot)
 % xA, yA, xAd, yAd, v,   t1, t1d, tR, tRd, tL,  
 % tLd, t2, t2d, t3, t3d,   t4, t4d,t5,t5d 
 
@@ -134,7 +134,7 @@ Gk =[];
 %                     th1+Z0(12)]
 % Jw_end = jacobian(Jw,[Z0(9) Z0(11) Z0(12) Z0(14) Z0(16) Z0(18)]);
 Jvw = [r/2  r/2;
-      r/d  r/d];
+      r/d  -r/d];
 Jxv = [cos(Z0(6)) 0;
        sin(Z0(6)) 0;
          0        1];
@@ -143,7 +143,7 @@ Jrx = jacobian(pos{end}.p(:,end),[Z0(1) Z0(2) Z0(6)]);
 
 Jra = jacobian(pos{end}.p(:,end),[Z0(12) Z0(14) Z0(16) Z0(18)]);
 
-J_end = [ Jrx*Jxv*Jvw  Jra];
+Jr = [ Jrx*Jxv*Jvw  Jra];
 
 Jrv = [ Jrx*Jxv  Jra];
 

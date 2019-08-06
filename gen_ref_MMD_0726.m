@@ -26,9 +26,9 @@ H = 15;
 nstep = H+1;
 nu = 6; % acceleration dim
 %z0_ = [0 0 0 0 0  0 0 0 0 0  0 0 0 -pi/2 0   pi/3 0 pi/4 0 ]';
-z0_ = [0 0 0 0 0  0 0 0 0 0  0 -pi/2 0 0 0   0 0 0 0 ]';
+z0_ = [-0.4 0 0 0 0  0 0 0 0 0  0 -pi/2 0 0 0   0 0 0 0 ]';
 Vref = [0.1; 0];
-Thref = [ 0 0  pi/4 0 pi/4 0   -pi/8 0 -pi/8 0]';
+Thref = [ 0 0  pi/4 0 pi/3 0   -pi/6 0 -pi/6 0]';
 
 r = 0.0215;
 ang = Ts*H*norm(Vref)/r;

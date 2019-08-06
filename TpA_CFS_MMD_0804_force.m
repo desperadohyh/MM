@@ -137,15 +137,29 @@ for k = 1:10
     Jk_Z = Jk_f(zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(6),zk(9),zk(11));
     Jdk_Z = Jdk_f(u(1),u(2),u(3),u(4),u(5),zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19),zk(6),zk(9),zk(11)); 
     
-    Jit = pinv(Jk_Z)';
-    Ji = pinv(Jk_Z);
-    Mx = Jit*Mk_Z*Ji;
-    Vx = Jit*(Vk_Z-Mk_Z*Ji*Jdk_Z*zk(9:2:end));
-    Gx = Jit*Gk_Z;
+    Jrv_Z = Jrv_f(zk(6),zk(12),zk(14),zk(16),zk(18));
+    dJrv_Z = dJrv_f(zk(6),zk(7),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19));
+    Jr_z = Jr_f(zk(6),zk(12),zk(14),zk(16),zk(18));
     
-    Xdd = Jdk_Z*zk(9:2:end)+Jk_Z*u;
-    b_force = Mx*(Jdk_Z*zk(9:2:end))+Vx+Gx;
-    al =  Mx*Jk_Z;
+%     Jit = pinv(Jk_Z)';
+%     Ji = pinv(Jk_Z);
+%     Mx = Jit*Mk_Z*Ji;
+%     Vx = Jit*(Vk_Z-Mk_Z*Ji*Jdk_Z*zk(9:2:end));
+%     Gx = Jit*Gk_Z;
+%     
+%     Xdd = Jdk_Z*zk(9:2:end)+Jk_Z*u;
+%     b_force = Mx*(Jdk_Z*zk(9:2:end))+Vx+Gx;
+%     al =  Mx*Jk_Z;
+    
+    Jit = pinv(Jr_z)';
+    Mx = Jit*Mk_Z;
+    Vx = Jit*Vk_Z;
+    Gx = Jit*Gk_Z;
+    force = Mx*u+Vx+Gx;
+    b_force = Vx+Gx;
+    al =  Mx;
+    
+    
     LA = [LA;  zeros(1,(i-1)*nu) al(1,:) zeros(1,(H-i)*nu) zeros(1,i-1) -1 zeros(1,H-i)];
     SA = [SA;  F-b_force(1) ];
     LA = [LA;  zeros(1,(i-1)*nu) -al(1,:) zeros(1,(H-i)*nu) zeros(1,i-1) -1 zeros(1,H-i)];
@@ -301,8 +315,8 @@ hold on
 end
 %%
 figure
-gap = 3;
-plot_MM5(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0)
+gap = 1;
+plot_MM5(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,1)
 %plot_implement(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0)
 
 %%
@@ -392,15 +406,13 @@ ylabel('Angular velocity [rad/s]')
 legend('Vel','AngVel','location','best')
 xlabel('Time step')
 
-% force
+%% force
 figure
 
 plot(force_implement(1,:))
 hold on
 plot(force_implement(2,:))
 plot(force_implement(3,:))
-plot(force_implement(4,:))
-plot(force_implement(5,:))
-plot(force_implement(6,:))
 
-legend('\theta_1', '\theta_2','\theta_3', '\theta_4','\theta_5', '\theta_6')
+
+legend('X_{e,w}', 'Y_{e,w}','Z_{e,w}')

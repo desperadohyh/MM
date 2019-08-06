@@ -1,7 +1,7 @@
 dt = 0.1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-gen_ref_MMD
+gen_ref_MMD_0726
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Arm definition
@@ -20,15 +20,18 @@ uk = robot.uk;
 %%
 % 
 %[ Mk, Vk, Gk, J_end, Jd, robot] = get_joint_torque_sym(robot);
-%[ Mk, Vk, Gk, Jrv, dJrv, robot] = get_joint_torque_0805(robot)
+[ Mk, Vk, Gk, Jr, Jrv, dJrv, robot] = get_joint_torque_0805(robot)
 % Mkf =  matlabFunction(Mk,'File','Mk_f');
 % Vkf =  matlabFunction(Vk,'File','Vk_f');
 % Gkf =  matlabFunction(Gk,'File','Gk_f');
 % Jkf =  matlabFunction(J_end,'File','Jk_f');
 %Jdkf =  matlabFunction(Jd,'File','Jdk_f');
 
+% Jrf =  matlabFunction(Jr,'File','Jr_f');
 % Jrvf =  matlabFunction(Jrv,'File','Jrv_f');
 % dJrvf =  matlabFunction(dJrv,'File','dJrv_f');
+
+Rf = matlabFunction(robot.R_{end},'File','R_f');
 %%
 %load('MVG_3.mat')
 ss = 10;
@@ -62,10 +65,11 @@ Vk_Z = Vk_f(zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19)
 Gk_Z = Gk_f(zk(14),zk(16),zk(18));
 Jk_Z = Jk_f(zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(6),zk(9),zk(11));
 Jdk_Z = Jdk_f(u(1),u(2),u(3),u(4),u(5),zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19),zk(6),zk(9),zk(11)); 
-
+Jr_z = Jr_f(zk(6),zk(12),zk(14),zk(16),zk(18));
 Jrv_Z = Jrv_f(zk(6),zk(12),zk(14),zk(16),zk(18));
 dJrv_Z = dJrv_f(zk(6),zk(7),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19));
 
+R_Z = R_f();
 % torque
 tau = Mk_Z*u+Vk_Z+Gk_Z;
 torque_implement = [torque_implement  double(tau) ];
@@ -76,14 +80,23 @@ torque_implement = [torque_implement  double(tau) ];
 % Mx = Jit*Mk_Z*Ji;
 % Vx = Jit*(Vk_Z-Mk_Z*Ji*Jdk_Z*zk(9:2:end));
 % Gx = Jit*Gk_Z;
-Jit = pinv(Jk_Z)';
-Ji = pinv(Jk_Z);
-Mx = Jit*Mk_Z*Ji;
-Vx = Jit*(Vk_Z-Mk_Z*Ji*Jdk_Z*zk(9:2:end));
+% thv = [Zk(5) Zk(7) Zk(13) Zk(15) Zk(17) Zk(19) ]';
+% Jit = pinv(Jrv_Z)';
+% Ji = pinv(Jrv_Z);
+% Mx = Jit*Mk_Z*Ji;
+% Vx = Jit*(Vk_Z-Mk_Z*Ji*dJrv_Z*thv);
+% Gx = Jit*Gk_Z;
+% 
+% Xdd = dJrv_Z*thv+Jk_Z*u;
+% force = Mx*Xdd+Vx+Gx;
+
+Jit = pinv(Jr_z)';
+
+Mx = Jit*Mk_Z;
+Vx = Jit*Vk_Z;
 Gx = Jit*Gk_Z;
 
-Xdd = Jdk_Z*zk(9:2:end)+Jk_Z*u;
-force = Mx*Xdd+Vx+Gx;
+force = R_Z*(Mx*u+Vx+Gx);
 force_implement = [force_implement double(force)];
 
 
@@ -148,8 +161,8 @@ plot(force_implement(1,:))
 hold on
 plot(force_implement(2,:))
 plot(force_implement(3,:))
-plot(force_implement(4,:))
-plot(force_implement(5,:))
-plot(force_implement(6,:))
+% plot(force_implement(4,:))
+% plot(force_implement(5,:))
+% plot(force_implement(6,:))
 
 legend('\theta_1', '\theta_2','\theta_3', '\theta_4','\theta_5', '\theta_6')
