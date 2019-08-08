@@ -50,8 +50,9 @@ for i=1:gap:ss
     % plot door
     if door ==0
         continue
+    else
     c = [0;0.4];
-    norm((pos{6}.p(1:2,3)-c))
+    
     line = (pos{6}.p(1:2,3)-c)*0.8/norm((pos{6}.p(1:2,3)-c));
     door = [line line zeros(2,2); 0.4 0 0 0.4]+[0;0.4;0];
     plotdoor = fill3(door(1,:), door(2,:), door(3,:), ...
@@ -61,7 +62,7 @@ for i=1:gap:ss
     zlabel('z[m]')
     axis equal
     axis([-0.5 0.7 -0.3 0.5 0 0.4])
-    pause
+    %pause
     end
 end
 

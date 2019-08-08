@@ -114,13 +114,13 @@ Mk = [];
 Vk =[];
 Gk =[];
 
-Mk  = hessian(KENG,dTheta);
-
-Vk_2 = gradient(KENG,dTheta);
-Vk_1 = jacobian(Vk_2,Theta);
-Vk = Vk_1*dTheta + gradient(-KENG,Theta);
-
-Gk = gradient(UENG,Theta);
+% Mk  = hessian(KENG,dTheta);
+% 
+% Vk_2 = gradient(KENG,dTheta);
+% Vk_1 = jacobian(Vk_2,Theta);
+% Vk = Vk_1*dTheta + gradient(-KENG,Theta);
+% 
+% Gk = gradient(UENG,Theta);
 
 %% end-effector force
 
@@ -149,7 +149,7 @@ Jxw = blkdiag(Jxw , eye(4));
 dJxw = dJxv*Jvw;
 dJxw = blkdiag(dJxw , eye(4));
      
-JrvA = jacobian(pos{end}.p(:,end),Theta);
+JrvA = jacobian(pos{end}.p(:,2),Theta);
      
 % Jrx = jacobian(pos{end}.p(:,end),[Z0(1) Z0(2) Z0(6)]);
 % 

@@ -104,7 +104,28 @@ nn = size(thetas,2);
 x_f = -0.20:0.60/(nn-1):0.40;
 figure
 gap = 5;
-plot_implement(nn,[zeros(1,nn); angles(1:numTotalPoints);thetas],[x_f; zeros(1,nn)],robot1,tb3,gap)
+plot_MM5(nn,[zeros(1,nn); angles(1:numTotalPoints);thetas],[x_f; zeros(1,nn)],robot1,tb3,gap,1)
 
 theta_open = [zeros(1,nn); angles(1:numTotalPoints);thetas];
 traj_open = [x_f; zeros(1,nn)];
+
+refpath = [];
+for i=1:nn
+    refpath = [refpath;traj_open(:,i)];
+end
+z0_ = [traj_open(:,1);0;0;0];
+[X_out, u] = base_ILQR([],refpath,30,z0_,var)
+
+% ref.theta = theta_open;
+% ref.path = refpath;
+
+%%
+Ref.z = zeros(19,nn);
+Ref.z(1:2,:) = traj_open;
+Ref.z(5,:) = X_out(4,:);
+Ref.z(6,:) = X_out(3,:);
+Ref.z(7,:) = X_out(5,:);
+Ref.z(12,:) = theta_open(2,:);
+Ref.z(14,:) = theta_open(3,:);
+Ref.z(16,:) = theta_open(4,:);
+Ref.z(18,:) = theta_open(5,:);
