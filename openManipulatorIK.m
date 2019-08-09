@@ -90,8 +90,6 @@ end
 hold off
 
 %%
-% sampling time
-dt          = 0.5;
 
 % TB: trajectory dimension
 dim         = 2; %x,y
@@ -122,6 +120,7 @@ z0_ = [traj_open(:,1);0;0;0];
 %%
 Ref.z = zeros(19,nn);
 Ref.z(1:2,:) = traj_open;
+Ref.z(3,:) = X_out(4,:);
 Ref.z(5,:) = X_out(4,:);
 Ref.z(6,:) = X_out(3,:);
 Ref.z(7,:) = X_out(5,:);

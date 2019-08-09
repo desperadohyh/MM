@@ -26,15 +26,18 @@ H = 15;
 nstep = H+1;
 nu = 6; % acceleration dim
 %z0_ = [0 0 0 0 0  0 0 0 0 0  0 0 0 -pi/2 0   pi/3 0 pi/4 0 ]';
-z0_ = [-0.4 0 0 0 0  0 0 0 0 0  0 -pi/2 0 0 0   0 0 0 0 ]';
-Vref = [0.1; 0];
-Thref = [ 0 0  pi/4 0 pi/3 0   -pi/6 0 -pi/6 0]';
+load_ref = load('open_ref');
+Ref_ = load_ref.Ref.z;
+Ref_ = [Ref_ Ref_(:,end)*ones(1,10)];
+z0_ = Ref_(:,1);
+Vref = [Ref_(3,5); 0];
+Thref = [ 0 0  Ref_(12:19,end)']';
 
 r = 0.0215;
 ang = Ts*H*norm(Vref)/r;
 ang_v = norm(Vref)/r;
-zT = [z0_(1)+Ts*H*Vref(1) 0 Vref' norm(Vref)  0 0 z0_(8)+ang ang_v z0_(10)+ang  ang_v Thref(3) 0 0 0   0 0 0 0]';
-zTt = [0.5;0];
+zT = [z0_(1)+Ts*H*Vref(1) 0 Vref' norm(Vref)  0 0 z0_(8)+ang ang_v z0_(10)+ang  ang_v Thref(end-8:end)']';
+zTt = [Ref_(1,end);0];
 nstate = size(z0_,1); % QP variable dim
 
 xref_pre =[];

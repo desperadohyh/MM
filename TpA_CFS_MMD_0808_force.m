@@ -10,7 +10,7 @@ fighandle(2) = figure(2); hold on;
 %% parameter definition
 % TB definition
 % sampling time
-dt          = 0.5;
+dt          = 0.2;
 % cost ratio
 % y, v, th, u
 c = [50 0 1 0.1];
@@ -36,9 +36,11 @@ ss = 35;
 
 %%
 for steps=1:ss
+z0_
+zT
+[xori,xref,xref_pre,xR, robot.A, robot.B]=loop_open(var,z0_,zT,H,zTt,Ref_(:,steps));
 
-[xori,xref,xref_pre,xR, robot.A, robot.B]=loop_MMD(var,z0_,zT,H,zTt);
-
+%pause
 
 %% MM Cost function 
 % if steps == 11||steps == 12
@@ -186,11 +188,11 @@ for k = 1:10
     alpha_out = soln(1:6*H);
     states_out = Aaug*z0_+Baug*alpha_out;
     states_out = [z0_ ;states_out];
-    theta_out = [  z0_(6)  states_out(6:nstate:end)';
-                   z0_(12)  states_out(12:nstate:end)';
-                   z0_(14)  states_out(14:nstate:end)';
-                   z0_(16)  states_out(16:nstate:end)';
-                   z0_(18)  states_out(18:nstate:end)'];
+    theta_out = [    states_out(6:nstate:end)';
+                     states_out(12:nstate:end)';
+                     states_out(14:nstate:end)';
+                    states_out(16:nstate:end)';
+                    states_out(18:nstate:end)'];
                
     waypoints = [  states_out(1:nstate:end)';
                    states_out(2:nstate:end)'];
@@ -282,7 +284,7 @@ for j = 1:nstep
         
 end
     
-    end_effector(:,j)=M{i}(1:3,1:3)*[0.08;0;0]+M{i}(1:3,4)+[waypoints(1,j);waypoints(2,j);0.1];
+    end_effector(:,j)=M{i}(1:3,1:3)*[0.08;0;0]+M{i}(1:3,4)+[X_out(1,j);X_out(2,j);0.1];
 
 end
 %%
@@ -400,12 +402,14 @@ ref.w = pla_implement(3,:);
 figure
 yyaxis left
 plot(ref.v,'-bx')
+hold on
+plot(Ref_(3,:))
 ylabel('Linear velocity [m/s]')
 hold on
 yyaxis right
 plot(ref.w,'-ro')
 ylabel('Angular velocity [rad/s]')
-legend('Vel','AngVel','location','best')
+legend('Vel','ref_v','AngVel','location','best')
 xlabel('Time step')
 
 %% force
