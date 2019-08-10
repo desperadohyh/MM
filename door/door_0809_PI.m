@@ -1,10 +1,12 @@
 
-
-
-
-
-close all 
+clc
 clear all
+close all
+fighandle = [];
+fighandle(1) = figure(1); hold on;
+set(gcf, 'position', [0 0 500 500]);
+fighandle(2) = figure(2); hold on;
+
 %% Door simulation
 
 % parameters
@@ -52,12 +54,19 @@ while t_now<6
     % update
     tspan = [t_now 15+t_now];
     z0 = [z_now(1); z_now(2)];
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% transfer function
+
+Fc = tf([1/M],[1,B/M,K/M],0.05);
+dthc = tf([1],[1,B/M,K/M],0.05);
+thc = tf([1,B/M],[1,B/M,K/M],0.05);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     
-ode = @(t,z) door_ode(t,z,F,A,b);
+ode = @(t,z) door_ode(t,z,F*lc,A,b);
 [t,z] = ode45(ode, tspan, z0);
 
-if z(sample,1)>1.18 && z_stop == false
+if z(sample,1)>0.9 && z_stop == false
     z_stop_th = z(sample,1);
     t_stop = t(sample);
     z_stop = true;
@@ -70,21 +79,35 @@ end
 if z_stop == true  
     
     z = [ones(size(z,1),1)*z_stop_th zeros(size(z,1),1)];  
-    z_now = z(sample,:)'
-    pause
+    z_now = z(sample,:)';
+    %pause
 end
 
 t_now = t(sample);
-z_now = z(sample,:)'
+z_now = z(sample,:)';
+
+% fighandle(1)
+% plot(t,z(:,1)')
+% hold on
+% pause
 
 t_all = [t_all; t_now];
 z_all = [z_all; z_now'];
 aa=aa+1;
+
+stepplot(H)
+
+
+
+
+
+
+
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 % Plot solution
-figure
+fighandle(1)
 plot(t_all,z_all(:,1))
 hold on
 plot(t_all,z_all(:,2))

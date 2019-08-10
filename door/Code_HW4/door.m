@@ -13,8 +13,8 @@
 %              Berkeley, CA, 94720, USA
 % ============================================================
 %%
-clear all;
-close all;
+%clear all;
+%close all;
 %%
 SW_PAA_ON         = 1;
 %%

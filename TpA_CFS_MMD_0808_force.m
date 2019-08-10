@@ -13,7 +13,7 @@ fighandle(2) = figure(2); hold on;
 dt          = 0.2;
 % cost ratio
 % y, v, th, u
-c = [50 0 1 0.1];
+c = [1 500 1 0.1];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 gen_ref_MMD_open
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,11 +36,10 @@ ss = 35;
 
 %%
 for steps=1:ss
-z0_
-zT
-[xori,xref,xref_pre,xR, robot.A, robot.B]=loop_open(var,z0_,zT,H,zTt,Ref_(:,steps));
-
-%pause
+all_implement
+[xori,xref,xref_pre,xR, robot.A, robot.B]=loop_open(var,z0_,zT,H,zTt,Ref_,steps);
+xref_pre
+pause
 
 %% MM Cost function 
 % if steps == 11||steps == 12
@@ -175,7 +174,7 @@ for k = 1:10
 %     f = fA;
 
    % Quadratic term
-    soft = 0.1;
+    soft = 1;
     Q = blkdiag(QA,soft*eye(H));
     
     % Linear term

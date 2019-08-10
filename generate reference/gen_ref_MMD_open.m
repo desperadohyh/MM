@@ -28,7 +28,7 @@ nu = 6; % acceleration dim
 %z0_ = [0 0 0 0 0  0 0 0 0 0  0 0 0 -pi/2 0   pi/3 0 pi/4 0 ]';
 load_ref = load('open_ref');
 Ref_ = load_ref.Ref.z;
-Ref_ = [Ref_ Ref_(:,end)*ones(1,10)];
+Ref_ = [Ref_ Ref_(:,end)*ones(1,40)];
 z0_ = Ref_(:,1);
 Vref = [Ref_(3,5); 0];
 Thref = [ 0 0  Ref_(12:19,end)']';
@@ -41,8 +41,15 @@ zTt = [Ref_(1,end);0];
 nstate = size(z0_,1); % QP variable dim
 
 xref_pre =[];
+keep_all = [1 3 5 12 14 16 18 18];
+ii = 1;
 for i = 1:nstate
-    xref_pre = [xref_pre; linspace(z0_(i),zT(i),nstep )];
+    if i == keep_all(ii)
+        xref_pre = [xref_pre; Ref_(keep_all(ii),1:nstep)];
+        ii = ii + 1;
+    else
+        xref_pre = [xref_pre; linspace(z0_(i),zT(i),nstep )];
+    end
 end  
 
 % rearrange reference
