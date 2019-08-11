@@ -26,8 +26,7 @@ uk = robot.uk;
 % 
 %[ Mk, Vk, Gk, J_end, Jd, robot] = get_joint_torque_sym(robot);
 % [ Mk, Vk, Gk, Jr, Jrv, dJrv, robot] = get_joint_torque_0805(robot);
-
- [ Mk, Vk, Gk, Jxw, dJxw, JrvA, dJrvA, robot] = get_joint_torque_D(robot)
+% [ Mk, Vk, Gk, Jxw, dJxw, JrvA, dJrvA, robot] = get_joint_torque_D(robot)
 % Mkf =  matlabFunction(Mk,'File','Mk_f');
 % Vkf =  matlabFunction(Vk,'File','Vk_f');
 % Gkf =  matlabFunction(Gk,'File','Gk_f');
@@ -65,19 +64,19 @@ z0_k = [0 0 0 0 0    0 0 0 0 0     0 -pi/2 0 0 0      0 0 0 0 ]';
 %              -(pi/3)*cos((t/180)*pi*(180)/ss)  ]; 
 
 
-         alpha_all = [ 0*(pi)*cos((t/180)*pi*(180)/ss);
-              0*(pi)*cos((t/180)*pi*(180)/ss);
-                0*3*(pi)*cos((t/180)*pi*(180)/ss);
-              (pi)*cos((t/180)*pi*(180)/ss);
-             -(pi)*cos((t/180)*pi*(180)/ss);
-             -0*(pi/3)*cos((t/180)*pi*(180)/ss)  ];   
-%          
 %          alpha_all = [ 0*(pi)*cos((t/180)*pi*(180)/ss);
 %               0*(pi)*cos((t/180)*pi*(180)/ss);
-%               0*3*(pi)*cos((t/180)*pi*(180)/ss);
-%               0*(pi)*cos((t/180)*pi*(180)/ss);
-%              -0*(pi/2)*cos((t/180)*pi*(180)/ss);
-%              -0*(pi/3)*cos((t/180)*pi*(180)/ss)  ];  
+%                 0*3*(pi)*cos((t/180)*pi*(180)/ss);
+%               (pi)*cos((t/180)*pi*(180)/ss);
+%              -(pi)*cos((t/180)*pi*(180)/ss);
+%              -0*(pi/3)*cos((t/180)*pi*(180)/ss)  ];   
+%          
+         alpha_all = [ 0*(pi)*cos((t/180)*pi*(180)/ss);
+              0*(pi)*cos((t/180)*pi*(180)/ss);
+              0*3*(pi)*cos((t/180)*pi*(180)/ss);
+              0*(pi)*cos((t/180)*pi*(180)/ss);
+             -0*(pi/2)*cos((t/180)*pi*(180)/ss);
+             -0*(pi/3)*cos((t/180)*pi*(180)/ss)  ];  
          
 for steps = 1:ss
     
