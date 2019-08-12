@@ -15,7 +15,6 @@
 %%
 clear all;
 close all;
-fighandle(1) = figure(1); hold on;
 %%
 SW_PAA_ON         = 1;
 
@@ -64,7 +63,7 @@ l1 = 0.2;
 m2 = 0.2;
 l2 = 0.2;
 
-ld = 0.05;
+ld = 0.04;
 lc = 0.05; %othe object covering
 lf = 0.06; %gap
 lp = 0.00;
@@ -109,7 +108,6 @@ while pick_ok == false
     [I, Tau] = IG_update(m1,l1,m2,l2,ld,lp,r,g);
     [num,den,Ts,theta,F, M] = model_update(I, B, K,Tau);
     sim(simuName);
-    fighandle(1); plot(y.time, y.signals.values); title('output angle');
     y_all = y.signals.values;
     dry = mean(y_all);
     error = norm(y_all - mean(y_all));
@@ -127,7 +125,7 @@ while pick_ok == false
             b(1) = 1;
             b(2) = 0;
             b(3) = 0;
-        elseif lp == (l1/2-lc)
+        elseif lp == lc
             error = 1;
             b(1) = 0;
             if y_all(end)*(l1/2)+r>=lf/2
@@ -139,24 +137,21 @@ while pick_ok == false
             end            
         else
             b(1) = exp(-norm(dry/((l1/2-lc))));
-            gap = y_all(end)*(l1/2)+r-lf/2
+            gap = y_all(end)*(l1/2)+r-lf/2;
             if gap>0
                 b2 = exp(-norm(gap/(l1/2-lc)));
-                b3 = exp(-norm((l1/2-lc)/(gap*50)))
+                b3 = exp(-norm((l1/2-lc)/(gap)));
                 b(2) = (1-b(1))*(b2/(b2+b3));
-                b(3) = (1-b(1))*(b3/(b2+b3))
-                %pause
+                b(3) = (1-b(1))*(b3/(b2+b3));
             else
-                b(2) = (1-b(1));
-                b(3) = 0;
-            end
+                
         end
         
         % update lp
         if dry*dryi<0            
             lp = lp/2;
         else            
-            lp = lp*(1+dry*0.1)+error*0.02*sign(dry);%*(1/count) ; % 0.06
+            lp = lp*(1+dry*0.1)+error*0.01*sign(dry);%*(1/count)  % 0.06
             if lp>lc
                 lp=lc;
             end            
@@ -169,13 +164,13 @@ while pick_ok == false
     %pause
 end
 %% plot
-figure; plot(lp_all','-b');
+figure; plot(lp_all,'-b');
 xlabel('Trials')
 ylabel('Distance from the geometric center to the grasping point [m]')
-figure; bar(b1','DisplayName','b1');
-legend('b(c_k=1)','b(c_k=2)','b(c_k=3)','Location','eastoutside')
+figure; plot( b1,'-b');
 xlabel('Trials')
-ylabel('b(c_k )')
+ylabel('b(c_k = 1)')
+
 % others
 % figure, plot(yhat.time, y.signals.values - yhat.signals.values,'r*');
 % title('posterior error'); grid on;
