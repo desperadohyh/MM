@@ -2,46 +2,16 @@ clc
 clear all
 close all
 
-
 dt = 0.1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 gen_ref_MMD_0726
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Arm definition
 % Arm parameters
 robot=robotproperty_MMD(4, z0_, Ts);
 nlink = 5;
 
 
-
-
-
-
-%%
-% robot.Z0 = sym('z',[19 1]);
-% robot.z0_ = sym('zk',[19 1]);
-% robot.uk = sym('uk',[6 1]);
-% uk = robot.uk;
-%[ Mk, Vk, Gk, J_end, Jd, robot] = get_joint_torque_sym(robot);
-% [ Mk, Vk, Gk, Jr, Jrv, dJrv, robot] = get_joint_torque_0805(robot);
-% [ Mk, Vk, Gk, Jxw, dJxw, JrvA, dJrvA, robot] = get_joint_torque_D(robot)
-% Mkf =  matlabFunction(Mk,'File','Mk_f');
-% Vkf =  matlabFunction(Vk,'File','Vk_f');
-% Gkf =  matlabFunction(Gk,'File','Gk_f');
-% % 
-% % 
-% % Jkf =  matlabFunction(J_end,'File','Jk_f');
-% % Jdkf =  matlabFunction(Jd,'File','Jdk_f');
-% % Jrf =  matlabFunction(Jr,'File','Jr_f');
-% % 
-% % 
-% Jxwf =  matlabFunction(Jxw,'File','Jxw_f');
-% dJxwf =  matlabFunction(dJxw,'File','dJxw_f');
-% JrvAf =  matlabFunction(JrvA,'File','JrvA_f');
-% dJrvAf =  matlabFunction(dJrvA,'File','dJrvA_f');
-% Rf = matlabFunction(robot.M{end}(1:3,1:3),'File','R_f');
 %%
 %load('MVG_3.mat')
 ss = 10;
@@ -51,11 +21,11 @@ torque_implement1 = [];
 angle_implement = [];
 forcel_implement = [];
 forceg_implement = [];
-end_all = [];
 robot.base = [0 0 0]';
 
 z0_k = [0 0 0 0 0    0 0 0 0 0     0 -pi/2 0 0 0      0 0 0 0 ]';
 % generate refrence
+
 inputi = 3;
 switch inputi
     case 1
@@ -83,22 +53,30 @@ alpha_all = [ 8*(pi)*cos((t/180)*pi*(180)/ss);
              -0*(pi/3)*cos((t/180)*pi*(180)/ss)  ]; 
 end
          
-for steps = 1:ss
-    
-  steps  
-u = alpha_all(:,steps);
+% initials
+load('open_data.mat')
+pend = [-0.1500 -0.2400 0.2540]';
+dpend = [0  0  0]';
+zk_d0 = z0_k;
 
-[zk, A, B ] = LinKin(z0_k, u, dt);
+
+         
+for steps = 1:ss
+
+% desired reference    
+% u_d = alpha_all(:,steps);
+% [zk_d, A, B ] = LinKin(zk_d0, u, dt);
+
+ddx_d
+dx_d
+x_d
 
 
 Mk_Z = Mk_f(zk(6),zk(12),zk(14),zk(16),zk(18));
 Vk_Z = Vk_f(zk(3),zk(4),zk(6),zk(7),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19));
 Gk_Z = Gk_f(zk(14),zk(16),zk(18));
-%Jk_Z = Jk_f(zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(6),zk(9),zk(11));
-%Jdk_Z = Jdk_f(u(1),u(2),u(3),u(4),u(5),zk(9),zk(11),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19),zk(6),zk(9),zk(11)); 
-%Jr_z = Jr_f(zk(6),zk(12),zk(14),zk(16),zk(18));
 Jxw_Z = Jxw_f(zk(6));
-dJxw_Z = dJxw_f(zk(6),zk(7));
+dJxw_Z = dJxw_f(zk(6));
 JrvA_Z = JrvA_f(zk(6),zk(12),zk(14),zk(16),zk(18));
 dJrvA_Z = dJrvA_f(zk(6),zk(7),zk(12),zk(13),zk(14),zk(15),zk(16),zk(17),zk(18),zk(19));
 
@@ -136,8 +114,6 @@ forcel_implement = [forcel_implement double(force_l)];
 force_g = Mx*u_D+Vx+Gx;
 forceg_implement = [forceg_implement double(force_g)];
 
-% [ A_tau, b_tau, robot] = joint_torque_old(robot,obs_arm);
-% torque_implement1 = [torque_implement1  A_tau*alpha_all(:,steps)+b_tau ];
 angle_implement = [angle_implement zk];
 
 traj_ = [zk(1,:);
@@ -149,11 +125,17 @@ theta_ = [zk(6,:);
           zk(16,:);
           zk(18,:)];
 
-[end_effector]=get_end(theta_,traj_,robot);
-end_all = [end_all end_effector];
+[end_effector]=get_end(theta_out,[x_out';y_out'],robot);
+
+
+
+% next step
+[zk_, A, B ] = LinKin(zk, u_ctrl, dt);
+zk = zk_;
+
+(JrvA_Z*Jxw_Z)'
 
 z0_k = zk;
-
 
 end
 
@@ -171,7 +153,7 @@ theta_implement = [angle_implement(6,:);
 % robot visualize              
 figure
 gap = 2;
-plot_MM5(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0);
+plot_MM5(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0)
 %plot_implement(ss,theta_implement,traj_implement,robot,tb3,gap,0)
 %%
 % torque

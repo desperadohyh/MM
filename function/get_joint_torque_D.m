@@ -138,9 +138,9 @@ Jvw = [r/2  r/2;
 Jxv = [cos(Z0(6)) 0;
        sin(Z0(6)) 0;
          0        1];
-dJxv = [-sin(Z0(6)) 0;
-         cos(Z0(6)) 0;
-           0        1];   
+dJxv = [-sin(Z0(6))*Z0(7) 0;
+         cos(Z0(6))*Z0(7) 0;
+           0              1];   
      
 
 Jxw = Jxv*Jvw;

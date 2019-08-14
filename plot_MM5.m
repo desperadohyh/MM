@@ -1,4 +1,4 @@
-function plot_MM5(ss,theta_implement,traj_implement,robot,tb3,gap,door)
+function [end_all] = plot_MM5(ss,theta_implement,traj_implement,robot,tb3,gap,door)
 pos={};
 plotbase2=[];
 plotbase1=[];
@@ -6,6 +6,7 @@ plotwheels=[];
 links_=[];
 etrj=[];
 plotdoor=[];
+end_all = [];
 
 %% Plot
 
@@ -46,6 +47,7 @@ for i=1:gap:ss
        etrj(j) = plot3( pos{j}.p(1,3), pos{j}.p(2,3), pos{j}.p(3,3),'o-','color',[1-(i/ss)/3.5,1-(i/ss)/2.5,1-(i/ss)],'LineWidth',3);
        hold on
     end
+    end_all = [end_all pos{j}.p(1:3,3)];
     
     % plot door
     if door ==0
