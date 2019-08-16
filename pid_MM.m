@@ -14,8 +14,8 @@ nlink = 5;
 
 %%
 %load('MVG_3.mat')
-ss = 61;
-t = 1:ss;
+ss = 501;
+
 torque_implement = [];
 torque_implement1 = [];
 angle_implement = [];
@@ -29,15 +29,20 @@ u_all = [];
 
 robot.base = [0 0 0]';
 
-z0_k = [0 0 0 0 0    0 0 0 0 0     0 0 0 0 0      0 0 0 0 ]';
+
+z0_k = [-0.1562 -0.3  0 0 0    0 0 0 0 0     0 0 0 pi/4 0      -pi/8 0 -pi/8 0 ]';
+
 % generate refrence
 
 inputi = 3;
 
+xlim = 5;
          
 % initials
 load('open_data.mat')
-pend = [-0.1500 -0.2400 0.2540]';
+cc = load('open_please');
+X_all = cc.cc;
+pend = [0 -0.3 0.1539]';
 dpend = [0  0  0]';
 zk_d0 = z0_k;
 zk = z0_k;
@@ -47,9 +52,22 @@ Md = 0.4;
 Bd = 0.675;
 Kd = 0.648;
 Error = [];
+end_all = [];
 
-
-         
+X_all(3,:) = 0.1539*ones(1,size(X_all,2));
+v = 0.05;
+num = round((xlim -X_all(1,end))/(v*dt));
+gg = [linspace(X_all(1,end),xlim ,num );
+     X_all(2,end)*ones(1,num);
+     X_all(3,end)*ones(1,num);
+     v*ones(1,num);
+     0*ones(1,num);
+     0*ones(1,num);
+     0*ones(1,num);
+     0*ones(1,num);     
+     0*ones(1,num)];
+      
+X_all =[ X_all gg];
 for steps = 1:ss
 
 % desired reference    
@@ -98,7 +116,6 @@ Vx = Jit*Vk_Z;
 Gx = Jit*Gk_Z;
 
 
-angle_implement = [angle_implement zk];
 
 traj_ = [zk(1,:);
          zk(2,:)];
@@ -111,6 +128,8 @@ theta_ = [zk(6,:);
 
 [end_effector]=get_end(theta_,traj_,robot);
 
+end_all = [ end_all  end_effector];
+
 xdd = u_D;
 xd = JrvA_Z*Jxw_Z*zk(9:2:end);
 x = end_effector;
@@ -120,12 +139,14 @@ error_ = [x_d - x; xd_d - xd; xdd_d - xdd];
 Error = [Error  error_];
 
 
-gPID = [2 1.5 1.01];  
+gPID = [2 3 1.01];  
 % control input
-F_ctrl = (Vx+Mx*dJxw_Z*zk(9:2:end))+Gx+Mx*pinv(JrvA_Z)*(gPID(3)*xdd_d-(1/Md)*(gPID(2)*Bd*(xd - xd_d)+ gPID(1)*Kd*(x - x_d)));
+%F_ctrl = (Vx+Mx*dJxw_Z*zk(9:2:end))+Gx+Mx*pinv(JrvA_Z)*(gPID(3)*xdd_d-(1/Md)*(gPID(2)*Bd*(xd - xd_d)+ gPID(1)*Kd*(x - x_d)));
+F_ctrl = gPID(1)*(x_d - x) + gPID(2)*(xd_d - xd);
 tau_ctrl = (JrvA_Z*Jxw_Z)'*F_ctrl;
-u_ctrl = pinv(Jxw_Z)*Mk_Z*Jxw_Z*(tau_ctrl - pinv(Jxw_Z)*(Vk_Z - Gk_Z - Mk_Z*dJxw_Z*zk(9:2:end)));
-
+u_ctrl = 0.1*diag([100  100  7  3  4  5])*tau_ctrl ;
+%u_ctrl = pinv(Jxw_Z)*Mk_Z*Jxw_Z*(tau_ctrl - pinv(Jxw_Z)*(Vk_Z - Gk_Z - Mk_Z*dJxw_Z*zk(9:2:end)));
+%u_ctrl = pinv(Jxw_Z)*(pinv(Mk_Z)*(tau_ctrl-Vk_Z-Gk_Z)-dJxw_Z*zk(9:2:end));
 F_all = [F_all  F_ctrl ];
 tau_all = [tau_all tau_ctrl];
 u_all = [u_all u_ctrl];
@@ -138,13 +159,18 @@ forcel_implement = [forcel_implement double(force_l)];
 
 force_g = Mx*u_+Vx+Gx;
 forceg_implement = [forceg_implement double(force_g)];
+zk;
+angle_implement = [angle_implement zk];
 [zk_, A, B ] = LinKin(zk, u_ctrl, dt);
+
 zk = zk_;
 
 
 
-z0_k = zk;
 
+
+z0_k = zk;
+%pause
 end
 
 %% Plot
@@ -160,8 +186,11 @@ theta_implement = [angle_implement(6,:);
 %%
 % robot visualize              
 figure
-gap = 2;
+plot3(X_all(1,:),X_all(2,:),X_all(3,:))
+hold on
+gap = 5;
 plot_MM5(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0);
+plot3(X_all(1,:),X_all(2,:),X_all(3,:))
 %plot_implement(ss,theta_implement,traj_implement,robot,tb3,gap,0)
 %%
 % torque
@@ -184,7 +213,9 @@ plot_MM5(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0);
 
 % error
 figure
-plot(t_all,Error);
+plot(t_all,Error(1:6,:));
+
+legend('e_{x}', 'e_{y}','e_{z}', 'e_{Vx}', 'e_{Vy}','e_{Vz}','e_{ax}', 'e_{ay}','e_{az}')
 
 % degree
 figure

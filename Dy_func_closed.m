@@ -20,13 +20,13 @@ nlink = 5;
 
 
 %%
-robot.Z0 = sym('z',[19 1]);
-robot.z0_ = sym('zk',[19 1]);
-robot.uk = sym('uk',[6 1]);
-uk = robot.uk;
+%robot.Z0 = sym('z',[19 1]);
+%robot.z0_ = sym('zk',[19 1]);
+%robot.uk = sym('uk',[6 1]);
+%uk = robot.uk;
 %[ Mk, Vk, Gk, J_end, Jd, robot] = get_joint_torque_sym(robot);
 % [ Mk, Vk, Gk, Jr, Jrv, dJrv, robot] = get_joint_torque_0805(robot);
- [ Mk, Vk, Gk, Jxw, dJxw, JrvA, dJrvA, robot] = get_joint_torque_D(robot)
+% [ Mk, Vk, Gk, Jxw, dJxw, JrvA, dJrvA, robot] = get_joint_torque_D(robot)
 % Mkf =  matlabFunction(Mk,'File','Mk_f');
 % Vkf =  matlabFunction(Vk,'File','Vk_f');
 % Gkf =  matlabFunction(Gk,'File','Gk_f');
@@ -38,7 +38,7 @@ uk = robot.uk;
 % % 
 % % 
 % Jxwf =  matlabFunction(Jxw,'File','Jxw_f');
- dJxwf =  matlabFunction(dJxw,'File','dJxw_f');
+% dJxwf =  matlabFunction(dJxw,'File','dJxw_f');
 % JrvAf =  matlabFunction(JrvA,'File','JrvA_f');
 % dJrvAf =  matlabFunction(dJrvA,'File','dJrvA_f');
 % Rf = matlabFunction(robot.M{end}(1:3,1:3),'File','R_f');
@@ -54,9 +54,9 @@ forceg_implement = [];
 end_all = [];
 robot.base = [0 0 0]';
 
-z0_k = [0 0 0 0 0    0 0 0 0 0     0 -pi/2 0 0 0      0 0 0 0 ]';
+z0_k = [0 0 0 0 0    0 0 0 0 0     0 0 0 pi/4 0      -pi/8 0 -pi/8 0 ]';
 % generate refrence
-inputi = 3;
+inputi = 2;
 switch inputi
     case 1
 
@@ -68,11 +68,11 @@ alpha_all = [ 8*(pi)*cos((t/180)*pi*(180)/ss);
              -(pi/3)*cos((t/180)*pi*(180)/ss)  ]; 
 
     case 2
-         alpha_all = [ 0*(pi)*cos((t/180)*pi*(180)/ss);
+         alpha_all = [  0*4*(pi)*cos((t/180)*pi*(180)/ss);
               0*(pi)*cos((t/180)*pi*(180)/ss);
-                0*3*(pi)*cos((t/180)*pi*(180)/ss);
-              (pi)*cos((t/180)*pi*(180)/ss);
-             -(pi)*cos((t/180)*pi*(180)/ss);
+               3*(pi)*cos((t/180)*pi*(180)/ss);
+              0*(pi)*cos((t/180)*pi*(180)/ss);
+             -0*(pi)*cos((t/180)*pi*(180)/ss);
              -0*(pi/3)*cos((t/180)*pi*(180)/ss)  ];   
     case 3
          alpha_all = [ 0*(pi)*cos((t/180)*pi*(180)/ss);
@@ -170,8 +170,8 @@ theta_implement = [angle_implement(6,:);
 %%
 % robot visualize              
 figure
-gap = 2;
-plot_MM5(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0);
+gap = 1;
+[end_all]=plot_MM5(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0);
 %plot_implement(ss,theta_implement,traj_implement,robot,tb3,gap,0)
 %%
 % torque

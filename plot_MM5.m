@@ -11,11 +11,12 @@ end_all = [];
 %% Plot
 
 for i=1:gap:ss
-%     delete(plotbase2)
-%     delete(plotbase1)
-%     delete(plotwheels)
-%     delete(links_)
-%     delete(etrj)
+    
+    delete(plotbase2)
+    delete(plotbase1)
+    delete(plotwheels)
+    delete(links_)
+    delete(etrj)
 %     delete(plotdoor)
     % get bace position    
     base = [traj_implement(:,i); 0.1];
@@ -47,8 +48,13 @@ for i=1:gap:ss
        etrj(j) = plot3( pos{j}.p(1,3), pos{j}.p(2,3), pos{j}.p(3,3),'o-','color',[1-(i/ss)/3.5,1-(i/ss)/2.5,1-(i/ss)],'LineWidth',3);
        hold on
     end
-    end_all = [end_all pos{j}.p(1:3,3)];
-    
+    end_all = [end_all pos{j}.p(1:3,3)];    
+    xlabel('x[m]')
+    ylabel('y[m]')
+    zlabel('z[m]')
+    axis equal
+    axis([-0.5 5 -1.5 0.5 0 0.4])
+    pause(0.05)
     % plot door
     if door ==0
         continue
@@ -66,6 +72,7 @@ for i=1:gap:ss
     axis([-0.5 0.7 -0.3 0.5 0 0.4])
     %pause
     end
+   
 end
 
 xlabel('x[m]')

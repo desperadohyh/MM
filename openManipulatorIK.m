@@ -49,16 +49,16 @@ fnplt(trajectory,'r',2);
 ik = robotics.InverseKinematics('RigidBodyTree',robot);
 weights = [0.1 0.1 0 1 1 1];
 initialguess = robot.homeConfiguration;
-
+%%
 % Calculate the inverse kinematic solution using the "ik" solver 
 % Use desired weights for solution (First three are orientation, last three are translation)
 % Since it is a 4-DOF robot with only one revolute joint in Z we do not
 % put a weight on Z rotation; otherwise it limits the solution space
-numTotalPoints = 30;
+numTotalPoints = 10;
 
 % Evaluate trajectory to create a vector of end-effector positions
 eePositions = ppval(trajectory,linspace(0,trajectory.breaks(end),numTotalPoints));
-
+%%
 % Call inverse kinematics solver for every end-effector position using the
 % previous configuration as initial guess
 for idx = 1:size(eePositions,2)
@@ -102,8 +102,10 @@ nn = size(thetas,2);
 x_f = -0.20:0.60/(nn-1):0.40;
 figure
 gap = 5;
-plot_MM5(nn,[zeros(1,nn); angles(1:numTotalPoints);thetas],[x_f; zeros(1,nn)],robot1,tb3,gap,1)
-
+theta_ = [zeros(1,nn); angles(1:numTotalPoints);thetas];
+traj_ = [x_f; zeros(1,nn)];
+plot_MM5(nn,theta_,traj_ ,robot1,tb3,gap,1)
+[end_effector]=get_end(theta_,traj_,robot1);
 theta_open = [zeros(1,nn); angles(1:numTotalPoints);thetas];
 traj_open = [x_f; zeros(1,nn)];
 

@@ -1,4 +1,4 @@
-% door sys
+%% door sys
 r = 0.3;
 
 Z0 = sym('z',[2 1]);

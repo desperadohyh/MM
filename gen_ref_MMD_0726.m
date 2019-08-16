@@ -8,9 +8,9 @@ tb3.base = [0.065 0.065 -0.195 -0.195;
                 0.13  -0.13 -0.13  0.13];
             
 tb3.wC = [0    0;
-         0.14  -0.14  ;
+         0.13  -0.13  ;
          0.05 0.05];   % center of circle 
-R = 0.03 ;    % Radius of circle 
+R = 0.0215 ;    % Radius of circle 
 teta=0:0.5:2*pi ;
 for i = 1:2
 tb3.wx(i,:) = tb3.wC(1,i)+R*cos(teta);
