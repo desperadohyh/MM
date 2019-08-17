@@ -111,11 +111,11 @@ nn = size(thetas,2);
 %x_f = -0.20:0.60/(nn-1):0.40;
 figure
 gap = 1;
-theta_ = [zeros(1,nn); angles(1:numTotalPoints);thetas];
+theta_1 = [zeros(1,nn); angles(1:numTotalPoints);thetas];
 traj_1 = bacePositions+[0.15 0 0]';
 %traj_1 = [x_f; zeros(1,nn)];
 %plot_MM5(nn,theta_,traj_1(1:2,:),robot1,tb3,gap,1)
-[end_effector]=get_end(theta_,traj_1(1:2,:),robot1);
+[end_effector]=get_end(theta_1,traj_1(1:2,:),robot1);
 theta_open = [zeros(1,nn); angles(1:numTotalPoints);thetas];
 traj_open = traj_1;
 

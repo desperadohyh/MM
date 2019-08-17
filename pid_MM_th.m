@@ -44,6 +44,8 @@ xlim = 5;
          
 % initials
 load('IK_open_pidref.mat');
+
+% end effector reference
 end_effectorr =end_effector;
 X_all = R_all*X_all;
 %load('open_data.mat')
@@ -75,6 +77,14 @@ gg = [linspace(X_all(1,end),xlim ,num );
      0*ones(1,num)];
       
 X_all =[ X_all gg]+[ 0 0.35 zeros(1,7)]';
+
+
+% motor angle reference
+theta_open;
+
+% base tracking
+X_out(1:3,:);
+
 for steps = 1:ss
 
 % desired reference    
@@ -146,8 +156,12 @@ error_ = [x_d - x; xd_d - xd; xdd_d - xdd];
 Error = [Error  error_];
 
 
-gPID = [2 3 1.01];  
+  
 % control input
+gall = [1 1 1];
+
+% End-efector tracking
+gPID = [2 3 1.01];
 %F_ctrl = (Vx+Mx*dJxw_Z*zk(9:2:end))+Gx+Mx*pinv(JrvA_Z)*(gPID(3)*xdd_d-(1/Md)*(gPID(2)*Bd*(xd - xd_d)+ gPID(1)*Kd*(x - x_d)));
 F_ctrl = gPID(1)*(x_d - x) + gPID(2)*(xd_d - xd);
 tau_ctrl = (JrvA_Z*Jxw_Z)'*F_ctrl;
@@ -157,6 +171,14 @@ u_ctrl = diag([100  100  7  3  4  5])*tau_ctrl ;
 F_all = [F_all  F_ctrl ];
 tau_all = [tau_all tau_ctrl];
 u_all = [u_all u_ctrl];
+
+% angle tracking
+
+
+
+% base tracking
+
+
 
 
 % next step
