@@ -98,7 +98,7 @@ end
 hold off
 
 %%
-
+load('IK')
 
 % TB: trajectory dimension
 dim         = 2; %x,y
@@ -112,29 +112,29 @@ nn = size(thetas,2);
 figure
 gap = 1;
 theta_ = [zeros(1,nn); angles(1:numTotalPoints);thetas];
-traj_1 = bacePositions+[0.15 0 0]';
-%traj_1 = [x_f; zeros(1,nn)];
-%plot_MM5(nn,theta_,traj_1(1:2,:),robot1,tb3,gap,1)
-[end_effector]=get_end(theta_,traj_1(1:2,:),robot1);
+traj_ = bacePositions;
+%traj_ = [x_f; zeros(1,nn)];
+plot_MM5(nn,theta_,traj_ ,robot1,tb3,gap,1)
+[end_effector]=get_end(theta_,traj_,robot1);
 theta_open = [zeros(1,nn); angles(1:numTotalPoints);thetas];
-traj_open = traj_1;
+traj_open = traj_;
 
-end_effectord = [0 0.35 0 ]' - [-1 0 0 ; 0 1 0; 0 0 -1]*end_effector(1:3,:);
-%theta_ = atan([   0.0039 0.0079 0.0109 end_effector(1,4:end)]./end_effector(2,:))/pi*180;
-theta_ = atan(end_effectord(1,:)./end_effectord(2,:))/pi*180;
+end_effector = [0 0.35 0 ]' - [-1 0 0 ; 0 1 0; 0 0 -1]*end_effector(1:3,:);
+theta_ = atan([   0.0039 0.0079 0.0109 end_effector(1,4:end)]./end_effector(2,:))/pi*180;
+
 refpath = [];
 for i=1:nn
     refpath = [refpath;traj_open(1:2,i)];
 end
-z0_ = [traj_open(1:2,1);0;0;0];
-[X_out, u] = base_ILQR([],refpath,nn,z0_,var);
+z0_ = [traj_open(:,1);0;0;0];
+[X_out, u] = base_ILQR([],refpath,nn,z0_,var)
 
 % ref.theta = theta_open;
 % ref.path = refpath;
 
 %%
 Ref.z = zeros(19,nn);
-Ref.z(1:2,:) = traj_open(1:2,:);
+Ref.z(1:2,:) = traj_open;
 Ref.z(3,:) = X_out(4,:);
 Ref.z(5,:) = X_out(4,:);
 Ref.z(6,:) = X_out(3,:);
@@ -144,4 +144,4 @@ Ref.z(14,:) = theta_open(3,:);
 Ref.z(16,:) = theta_open(4,:);
 Ref.z(18,:) = theta_open(5,:);
 %%
-save('data/IK_open1.mat','Ref','X_out','theta_open','traj_open','end_effector','theta_','X_all')
+save('data/IK_open1.mat','Ref','X_out','theta_open','traj_open','end_effector','theta_')

@@ -23,7 +23,7 @@ B = 2.25*l1;
 
 M = (m*l1^2 + Izz)/lc;
 
-%%
+
 tspan = [0 15];
 z0 = [0; 0];
 Mu = 1;
@@ -43,7 +43,7 @@ aa = 0;
 
 % system
 A = [ 0            1;
-     -K/(M*l1)    -B/(M*l1)];
+     -K/(M)    -B/(M)];
 
 b = [ 0;
      1/M];
@@ -108,7 +108,7 @@ F_all = [ F_all lf];
 
 % generate xdd xd x reference
 
-xdd = dJk_f(z_now(1),z_now(2))*z_now(2) + Jk_f(z_now(1))*((F*lc-B/l1*z_now(2)-K/l1*z_now(1))/M);
+xdd = dJk_f(z_now(1),z_now(2))*z_now(2) + Jk_f(z_now(1))*((F*lc-B*z_now(2)-K*z_now(1))/M);
 xd = Jk_f(z_now(1))*z_now(2);
 x = [lc*cos(z_now(1));
      lc*sin(z_now(1));

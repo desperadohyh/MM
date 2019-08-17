@@ -1,7 +1,8 @@
-%% calculate force on the door
+%% calculate force on the door/ process signals
 clear all
-load('IK_open_th.mat')
+%load('IK_open_th.mat')
 
+load('IK_open1.mat')
 dt = 0.2;
 ss = size(theta_,2);
 theta_ = theta_/180*pi;
@@ -26,8 +27,8 @@ ddee(:,end+1) = ddee(:,end);
 % parameters
 
 m = 1;
-l1 = 0.4;
-lc = 0.4;
+l1 = 0.35;
+lc = 0.35;
 d = 0.01;
 Izz = m*((2*l1)^2+d^2)/12;
 % K = 4.16*l1;
@@ -56,3 +57,56 @@ figure
 plot(F_all')
 legend('F_{x,l}','F_{y,l}','F_{z,l}')
 % plot(z(:,1),z(:,2))
+
+
+%% process thetas
+
+%theta's
+
+theta_open(:,end+1) = theta_open(:,end);
+
+deet= [];
+for j = 1:ss
+    deet(:,j) = (theta_open(:,j+1)-theta_open(:,j))/dt;
+end
+
+deet(:,end+1) = deet(:,end);
+
+ddeet= [];
+for j = 1:ss
+    ddeet(:,j) = (deet(:,j+1)-deet(:,j))/dt;    
+end
+ddeet(:,end+1) = ddeet(:,end);
+
+% traj's
+traj = X_out(1:3,:);
+traj(:,end+1) = traj(:,end);
+
+deej= [];
+for j = 1:ss
+    deej(:,j) = (traj(:,j+1)-traj(:,j))/dt;
+end
+
+deej(:,end+1) = deej(:,end);
+
+ddeej= [];
+for j = 1:ss
+    ddeej(:,j) = (deej(:,j+1)-deej(:,j))/dt;    
+end
+ddeej(:,end+1) = ddeej(:,end);
+
+
+Ref.theta_ = theta_;
+Ref.dee = dee;
+Ref.ddee = ddee;
+
+Ref.theta_open = theta_open;
+Ref.deet = deet;
+Ref.ddeet = ddeet;
+
+Ref.traj = traj;
+Ref.deej = deej;
+Ref.ddeej = ddeej;
+
+
+save('IK_open_pidref.mat','Ref','X_out','theta_open','traj_open','end_effector','theta_','X_all')
