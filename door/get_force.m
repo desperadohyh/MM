@@ -95,6 +95,23 @@ for j = 1:ss
 end
 ddeej(:,end+1) = ddeej(:,end);
 
+% end-effector
+traj_e = end_effector;
+traj_e(:,end+1) = traj_e(:,end);
+
+dee_e= [];
+for j = 1:ss
+    dee_e(:,j) = (traj_e(:,j+1)-traj_e(:,j))/dt;
+end
+
+dee_e(:,end+1) = dee_e(:,end);
+
+ddee_e= [];
+for j = 1:ss
+    ddee_e(:,j) = (dee_e(:,j+1)-dee_e(:,j))/dt;    
+end
+ddee_e(:,end+1) = ddee_e(:,end);
+
 
 Ref.theta_ = theta_;
 Ref.dee = dee;
@@ -107,6 +124,10 @@ Ref.ddeet = ddeet;
 Ref.traj = traj;
 Ref.deej = deej;
 Ref.ddeej = ddeej;
+
+Ref.traj_e = traj_e;
+Ref.dee_e = dee_e;
+Ref.ddee_e = ddee_e;
 
 
 save('IK_open_pidref.mat','Ref','X_out','theta_open','traj_open','end_effector','theta_','X_all')
