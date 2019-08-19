@@ -2,6 +2,16 @@ clc
 clear all
 close all
 
+%% Record movie
+fighandle = [];
+fighandle(1) = figure(1); hold on;
+set(gcf, 'position', [0 0 500 500]);
+video = VideoWriter('peaks2_st.avi');
+video.FrameRate = 5;
+open(video);
+
+%%
+
 dt = 0.1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -182,14 +192,14 @@ Error_th = [Error_th  error_th];
 
   
 % control input
-gall = [0 2 0];
+gall = [1 2 0];
 gall = gall/norm(gall);
 
 % End-efector tracking
 gPID = [2 3 1.01];
 gPID = gPID/norm(gPID);
 %F_ctrl = (Vx+Mx*dJxw_Z*zk(9:2:end))+Gx+Mx*pinv(JrvA_Z)*(gPID(3)*xdd_d-(1/Md)*(gPID(2)*Bd*(xd - xd_d)+ gPID(1)*Kd*(x - x_d)));
-F_ctrl = gPID(1)*(x_d - x) + gPID(2)*(xd_d - xd);
+F_ctrl = 0.001*[9.81/1.5 0 0]';%gPID(1)*(x_d - x) + gPID(2)*(xd_d - xd);
 tau_ctrl = (JrvA_Z*Jxw_Z)'*F_ctrl;
 u_ctrl_e = 50*diag([0  0  7  3  4  5])*tau_ctrl ;
 %u_ctrl = pinv(Jxw_Z)*Mk_Z*Jxw_Z*(tau_ctrl - pinv(Jxw_Z)*(Vk_Z - Gk_Z - Mk_Z*dJxw_Z*zk(9:2:end)));
@@ -226,7 +236,8 @@ force_g = Mx*u_+Vx+Gx;
 forceg_implement = [forceg_implement double(force_g)];
 zk;
 angle_implement = [angle_implement zk];
-[zk_, A, B ] = LinKin(zk, u_ctrl, dt);
+exf = [];
+[zk_, A, B ] = LinKin_exf(zk, u_ctrl, dt,exf);
 
 zk = zk_;
 
@@ -259,11 +270,14 @@ hold on
 plot3(end_effectorr(1,1:ss),end_effectorr(2,1:ss),end_effectorr(3,1:ss),'-r*')
 %%
 gap = 1;
-end_implement = plot_MM5(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0);
+end_implement = plot_MM5(ss,theta_implement(1:end-1,:),traj_implement,robot,tb3,gap,0,v,fighandle);
 hold on
 plot3(X_all(1,1:ss),X_all(2,1:ss),X_all(3,1:ss));
 plot3(end_implement(1,1:ss),end_implement(2,1:ss),end_implement(3,1:ss),'-b*')
 
+frame = getframe(fighandle(1));
+writeVideo(v,frame);
+close(v);
 %plot_implement(ss,theta_implement,traj_implement,robot,tb3,gap,0)
 %%
 % torque

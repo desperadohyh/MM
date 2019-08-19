@@ -56,9 +56,9 @@ for i=1:gap:ss
     axis equal
     axis([-0.5 1 -1.5 0.5 0 0.4])
     pause(0.05)
-    if ~isempty(v)
-        frame = getframe(fighandle(1));
-        writeVideo(v,frame);
+    if isempty(v)==false
+    frame = getframe(fighandle(1));
+    writeVideo(v,frame);
     end
     % plot door
     if door ==0
